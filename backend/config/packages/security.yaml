@@ -1,0 +1,23 @@
+security:
+    enable_authenticator_manager: true
+    password_hashers:
+        App\Entity\Admin:
+            algorithm: 'auto'
+    
+    providers:
+        users_in_memory: { memory: null }
+        app_user_provider:
+            entity:
+                class: App\Entity\Admin
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: users_in_memory
+            security: false
+
+    access_control: [] 

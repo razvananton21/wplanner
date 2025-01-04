@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #4a6741; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .guest-info { margin: 20px 0; }
+        .additional-guests { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Nou RSVP Primit!</h1>
+        </div>
+        <div class="content">
+            <div class="guest-info">
+                <h2>{{ data.firstName }} {{ data.lastName }}</h2>
+                <p><strong>Participă:</strong> {{ data.attending == 'yes' ? 'Da' : 'Nu' }}</p>
+                
+                {% if data.attending == 'yes' %}
+                    <p><strong>Meniu:</strong> {{ data.diet }}</p>
+                    
+                    {% if data.additionalGuests|length > 0 %}
+                        <div class="additional-guests">
+                            <h3>Însoțitori:</h3>
+                            {% for guest in data.additionalGuests %}
+                                <p>
+                                    {{ guest.firstName }} {{ guest.lastName }}<br>
+                                    {{ guest.isChild ? '👶 Copil' : '👤 Adult' }}<br>
+                                    {{ guest.isVegetarian ? '🥗 Vegetarian' : '🍖 Normal' }}
+                                </p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+                
+                {% if data.preferences %}
+                    <p><strong>Mențiuni:</strong> {{ data.preferences }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
