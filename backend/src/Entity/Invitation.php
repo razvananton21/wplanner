@@ -4,7 +4,6 @@ namespace App\Entity;
 
 use App\Repository\InvitationRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: InvitationRepository::class)]
 class Invitation
@@ -14,31 +13,27 @@ class Invitation
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\ManyToOne(inversedBy: 'invitations')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Wedding $wedding = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Guest $guest = null;
+
     #[ORM\Column(length: 255)]
-    private ?string $name = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $email = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $phoneNumber = null;
-
-    #[ORM\Column(type: 'string', length: 36, unique: true)]
-    private string $uuid;
+    private ?string $token = null;
 
     #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
+    private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $sentAt = null;
-
-    #[ORM\Column(length: 255)]
-    private string $status = 'created';
+    #[ORM\Column]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     public function __construct()
     {
-        $this->uuid = Uuid::v4()->toRfc4122();
         $this->createdAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -46,68 +41,58 @@ class Invitation
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function getWedding(): ?Wedding
     {
-        return $this->name;
+        return $this->wedding;
     }
 
-    public function setName(string $name): self
+    public function setWedding(?Wedding $wedding): self
     {
-        $this->name = $name;
+        $this->wedding = $wedding;
         return $this;
     }
 
-    public function getEmail(): ?string
+    public function getGuest(): ?Guest
     {
-        return $this->email;
+        return $this->guest;
     }
 
-    public function setEmail(?string $email): self
+    public function setGuest(?Guest $guest): self
     {
-        $this->email = $email;
+        $this->guest = $guest;
         return $this;
     }
 
-    public function getPhoneNumber(): ?string
+    public function getToken(): ?string
     {
-        return $this->phoneNumber;
+        return $this->token;
     }
 
-    public function setPhoneNumber(?string $phoneNumber): self
+    public function setToken(string $token): self
     {
-        $this->phoneNumber = $phoneNumber;
+        $this->token = $token;
         return $this;
     }
 
-    public function getUuid(): string
-    {
-        return $this->uuid;
-    }
-
-    public function getCreatedAt(): \DateTimeImmutable
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function getSentAt(): ?\DateTimeImmutable
+    public function setCreatedAt(\DateTimeImmutable $createdAt): self
     {
-        return $this->sentAt;
-    }
-
-    public function setSentAt(?\DateTimeImmutable $sentAt): self
-    {
-        $this->sentAt = $sentAt;
+        $this->createdAt = $createdAt;
         return $this;
     }
 
-    public function getStatus(): string
+    public function getUpdatedAt(): ?\DateTimeImmutable
     {
-        return $this->status;
+        return $this->updatedAt;
     }
 
-    public function setStatus(string $status): self
+    public function setUpdatedAt(\DateTimeImmutable $updatedAt): self
     {
-        $this->status = $status;
+        $this->updatedAt = $updatedAt;
         return $this;
     }
 } 

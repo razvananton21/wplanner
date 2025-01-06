@@ -3,151 +3,123 @@
 namespace App\Controller;
 
 use App\Entity\Invitation;
+use App\Repository\InvitationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-#[Route('/api')]
+#[Route('/api/invitations')]
 class InvitationController extends AbstractController
 {
-    #[Route('/admin/invitations', name: 'create_invitation', methods: ['POST'])]
-    public function create(Request $request, EntityManagerInterface $em): JsonResponse
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private InvitationRepository $invitationRepository,
+        private SerializerInterface $serializer,
+        private ValidatorInterface $validator
+    ) {
+    }
+
+    #[Route('', name: 'app_invitation_index', methods: ['GET'])]
+    public function index(Request $request): JsonResponse
+    {
+        $weddingId = $request->query->get('wedding');
+        $guestId = $request->query->get('guest');
+        
+        $criteria = array_filter([
+            'wedding' => $weddingId,
+            'guest' => $guestId,
+        ]);
+        
+        $invitations = !empty($criteria) ? 
+            $this->invitationRepository->findBy($criteria) : 
+            $this->invitationRepository->findAll();
+            
+        return $this->json($invitations, Response::HTTP_OK, [], ['groups' => ['invitation:read']]);
+    }
+
+    #[Route('', name: 'app_invitation_create', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
         $invitation = new Invitation();
-        $invitation->setName($data['name']);
-        $invitation->setEmail($data['email'] ?? null);
-        $invitation->setPhoneNumber($data['phoneNumber'] ?? null);
-        
-        $em->persist($invitation);
-        $em->flush();
-        
-        return $this->json(['message' => 'Invitation created', 'id' => $invitation->getId()]);
-    }
+        $invitation->setWedding($data['wedding']);
+        $invitation->setGuest($data['guest']);
+        $invitation->setPdfUrl($data['pdfUrl'] ?? null);
+        $invitation->setIsRsvpSubmitted(false);
+        $invitation->setRsvpData([]);
 
-    #[Route('/admin/invitations/{id}/send', name: 'send_invitation', methods: ['POST'])]
-    public function send(
-        Invitation $invitation,
-        Request $request,
-        EntityManagerInterface $em,
-        MailerInterface $mailer
-    ): JsonResponse {
-        try {
-            $data = json_decode($request->getContent(), true);
-            $method = $data['method'] ?? 'email';
-
-            if ($method === 'email' && $invitation->getEmail()) {
-                try {
-                    $emailContent = $this->renderView('emails/invitation.html.twig', [
-                        'name' => $invitation->getName(),
-                        'link' => "http://localhost:5173/invitation/" . $invitation->getUuid()
-                    ]);
-
-                    $email = (new Email())
-                        ->from('razvananton21@gmail.com')
-                        ->to($invitation->getEmail())
-                        ->subject('Invitație la nuntă - Răzvan & Adriana')
-                        ->html($emailContent);
-
-                    $mailer->send($email);
-                    
-                    $invitation->setSentAt(new \DateTimeImmutable());
-                    $invitation->setStatus('sent');
-                    $em->flush();
-
-                    return $this->json([
-                        'message' => 'Invitation sent successfully',
-                        'debug' => [
-                            'to' => $invitation->getEmail(),
-                            'from' => 'razvananton21@gmail.com',
-                            'content' => $emailContent
-                        ]
-                    ]);
-                } catch (\Exception $emailError) {
-                    return $this->json([
-                        'error' => 'Failed to send email',
-                        'message' => $emailError->getMessage(),
-                        'trace' => $emailError->getTraceAsString()
-                    ], 500);
-                }
-            } elseif ($method === 'whatsapp' && $invitation->getPhoneNumber()) {
-                $message = $this->formatWhatsAppInvitation($invitation);
-                $whatsappLink = "https://wa.me/" . $invitation->getPhoneNumber() . "?text=" . urlencode($message);
-                
-                $invitation->setSentAt(new \DateTimeImmutable());
-                $invitation->setStatus('sent');
-                $em->flush();
-                
-                // return $this->json(['whatsappLink' => $whatsappLink]);
-                return $this->json([]);
-            }
-
-            throw new \Exception('No valid sending method available');
-        } catch (\Exception $e) {
-            return $this->json([
-                'error' => 'Failed to send invitation',
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
-        }
-    }
-
-    #[Route('/admin/invitations', name: 'list_invitations', methods: ['GET'])]
-    public function list(EntityManagerInterface $em): JsonResponse
-    {
-        $invitations = $em->getRepository(Invitation::class)->findBy([], ['createdAt' => 'DESC']);
-        
-        $data = array_map(function($invitation) {
-            return [
-                'id' => $invitation->getId(),
-                'name' => $invitation->getName(),
-                'email' => $invitation->getEmail(),
-                'phoneNumber' => $invitation->getPhoneNumber(),
-                'status' => $invitation->getStatus(),
-                'createdAt' => $invitation->getCreatedAt()->format('Y-m-d H:i:s'),
-                'sentAt' => $invitation->getSentAt() ? $invitation->getSentAt()->format('Y-m-d H:i:s') : null,
-                'uuid' => $invitation->getUuid()
-            ];
-        }, $invitations);
-        
-        return $this->json(['invitations' => $data]);
-    }
-
-    #[Route('/invitations/{uuid}', name: 'get_invitation', methods: ['GET'])]
-    public function getInvitation(string $uuid, EntityManagerInterface $em): JsonResponse
-    {
-        $invitation = $em->getRepository(Invitation::class)->findOneBy(['uuid' => $uuid]);
-        
-        if (!$invitation) {
-            return $this->json(['error' => 'Invitation not found'], 404);
+        $errors = $this->validator->validate($invitation);
+        if (count($errors) > 0) {
+            return $this->json(['errors' => (string) $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        // Update status to opened if not already responded
-        if ($invitation->getStatus() === 'sent') {
-            $invitation->setStatus('opened');
-            $em->flush();
-        }
+        $this->entityManager->persist($invitation);
+        $this->entityManager->flush();
 
-        return $this->json([
-            'id' => $invitation->getId(),
-            'name' => $invitation->getName(),
-            'email' => $invitation->getEmail(),
-            'phoneNumber' => $invitation->getPhoneNumber(),
-            'status' => $invitation->getStatus(),
-            'uuid' => $invitation->getUuid()
-        ]);
+        return $this->json($invitation, Response::HTTP_CREATED, [], ['groups' => ['invitation:read']]);
     }
 
-    private function formatWhatsAppInvitation(Invitation $invitation): string
+    #[Route('/{id}', name: 'app_invitation_show', methods: ['GET'])]
+    #[IsGranted('view', 'invitation')]
+    public function show(Invitation $invitation): JsonResponse
     {
-        return "Dragă {$invitation->getName()},\n\n" .
-               "Te invităm cu drag să ne fii alături în ziua nunții noastre! 🎉\n\n" .
-               "Pentru a confirma prezența ta, accesează link-ul:\n" .
-               "http://localhost:5173/invitation/" . $invitation->getUuid();
+        return $this->json($invitation, Response::HTTP_OK, [], ['groups' => ['invitation:read']]);
+    }
+
+    #[Route('/{id}', name: 'app_invitation_update', methods: ['PUT'])]
+    #[IsGranted('edit', 'invitation')]
+    public function update(Request $request, Invitation $invitation): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['pdfUrl'])) {
+            $invitation->setPdfUrl($data['pdfUrl']);
+        }
+
+        $errors = $this->validator->validate($invitation);
+        if (count($errors) > 0) {
+            return $this->json(['errors' => (string) $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        $this->entityManager->flush();
+
+        return $this->json($invitation, Response::HTTP_OK, [], ['groups' => ['invitation:read']]);
+    }
+
+    #[Route('/{id}/rsvp', name: 'app_invitation_rsvp', methods: ['POST'])]
+    #[IsGranted('submit_rsvp', 'invitation')]
+    public function submitRsvp(Request $request, Invitation $invitation): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $rsvpData = $data['rsvpData'] ?? [];
+
+        $invitation->setIsRsvpSubmitted(true);
+        $invitation->setRsvpData($rsvpData);
+
+        $errors = $this->validator->validate($invitation);
+        if (count($errors) > 0) {
+            return $this->json(['errors' => (string) $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        $this->entityManager->flush();
+
+        return $this->json($invitation, Response::HTTP_OK, [], ['groups' => ['invitation:read']]);
+    }
+
+    #[Route('/{id}', name: 'app_invitation_delete', methods: ['DELETE'])]
+    #[IsGranted('delete', 'invitation')]
+    public function delete(Invitation $invitation): JsonResponse
+    {
+        $this->entityManager->remove($invitation);
+        $this->entityManager->flush();
+
+        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 } 

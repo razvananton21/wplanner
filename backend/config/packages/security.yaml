@@ -1,23 +1,57 @@
 security:
     enable_authenticator_manager: true
     password_hashers:
-        App\Entity\Admin:
-            algorithm: 'auto'
-    
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        App\Entity\User:
+            algorithm: auto
+
     providers:
-        users_in_memory: { memory: null }
         app_user_provider:
             entity:
-                class: App\Entity\Admin
+                class: App\Entity\User
                 property: email
 
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-        main:
-            lazy: true
-            provider: users_in_memory
+        login:
+            pattern: ^/api/auth/login
+            stateless: true
+            provider: app_user_provider
+            json_login:
+                check_path: /api/auth/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+        register:
+            pattern: ^/api/auth/register
+            stateless: true
             security: false
+        rsvp:
+            pattern: ^/api/rsvp
+            stateless: true
+            security: false
+        form_fields:
+            pattern: ^/api/weddings/\d+/form-fields
+            stateless: true
+            security: false
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            jwt: 
+                authenticator: lexik_jwt_authentication.security.jwt_authenticator
+            entry_point: jwt
 
-    access_control: [] 
+    access_control:
+        - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/rsvp, roles: PUBLIC_ACCESS }
+        - { path: ^/api/weddings/\d+/form-fields, roles: PUBLIC_ACCESS }
+        - { path: ^/api/test/public, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+        
+    role_hierarchy:
+        ROLE_ADMIN: ROLE_USER 
