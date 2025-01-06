@@ -35,7 +35,6 @@ class AuthController extends AbstractController
         $user->setEmail($data['email']);
         $user->setFirstName($data['firstName']);
         $user->setLastName($data['lastName']);
-        $user->setName($data['firstName'] . ' ' . $data['lastName']);
 
         // Hash the password
         $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
@@ -76,7 +75,6 @@ class AuthController extends AbstractController
                 'email' => $user->getEmail(),
                 'firstName' => $user->getFirstName(),
                 'lastName' => $user->getLastName(),
-                'name' => $user->getName(),
                 'roles' => $user->getRoles(),
             ],
         ], Response::HTTP_CREATED);

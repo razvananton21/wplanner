@@ -30,7 +30,6 @@ class CreateTestUserCommand extends Command
         $user->setEmail('admin@example.com');
         $user->setFirstName('Admin');
         $user->setLastName('User');
-        $user->setName('Admin User');
         $user->setPassword('$2y$12$LrSNltgj.CbOvklPamkmdOeHuwSPLGFr7lhnNrj5Jgfu9HUN8dNn6'); // test123
         $user->setRoles(['ROLE_ADMIN']);
 
