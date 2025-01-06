@@ -25,11 +25,19 @@
    - Smart dietary requirements
    - Response analytics
 
-2. **Basic Table Management** [⏳]
-   - Table creation
-   - Guest assignment
-   - Capacity tracking
-   - Basic conflict detection
+2. **Basic Table Management** [✓]
+   - Table creation ✓
+   - Guest assignment ✓
+   - Capacity tracking ✓
+   - Basic conflict detection ✓
+   - VIP table designation ✓
+   - Location tracking ✓
+   - Dietary restrictions handling ✓
+   - Drag-and-drop interface ✓
+   - Search functionality ✓
+   - Real-time validation ✓
+   - Wedding membership validation ✓
+   - Duplicate assignment prevention ✓
 
 3. **Essential Wedding Details** [⏳]
    - Basic information

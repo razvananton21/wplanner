@@ -350,6 +350,115 @@
    }
    ```
 
+### Table Management [✓]
+
+#### Entity Structure [✓]
+```php
+class Table
+{
+    private ?int $id;
+    private ?string $name;
+    private ?int $capacity;
+    private ?int $minCapacity;
+    private string $shape;
+    private ?array $dimensions;
+    private ?string $location;
+    private bool $isVIP;
+    private ?array $metadata;
+    private ?Wedding $wedding;
+    private Collection $guests;
+    private int $guestCount;
+    private int $availableSeats;
+}
+```
+
+#### API Endpoints [✓]
+
+1. **Table Management**
+   - GET `/api/weddings/{id}/tables` - List all tables for a wedding ✓
+   - POST `/api/weddings/{id}/tables` - Create a new table ✓
+   - GET `/api/tables/{id}` - Get table details ✓
+   - PUT `/api/tables/{id}` - Update table ✓
+   - DELETE `/api/tables/{id}` - Delete table ✓
+
+2. **Guest Assignment**
+   - PUT `/api/tables/{id}/guests` - Assign guests to table ✓
+   - DELETE `/api/tables/{id}/guests/{guestId}` - Remove guest from table ✓
+   - POST `/api/tables/validate-assignment` - Validate guest assignments ✓
+
+#### Security [✓]
+
+1. **Table Voter**
+   - Supports view, edit, delete, and assign_guests attributes ✓
+   - Checks user permissions based on wedding ownership ✓
+   - Validates guest assignment operations ✓
+
+2. **Security Annotations**
+   - `#[IsGranted('view', 'wedding')]` for listing tables ✓
+   - `#[IsGranted('edit', 'wedding')]` for creating tables ✓
+   - `#[IsGranted('view', 'table')]` for viewing table details ✓
+   - `#[IsGranted('edit', 'table')]` for updating tables ✓
+   - `#[IsGranted('delete', 'table')]` for deleting tables ✓
+   - `#[IsGranted('assign_guests', 'table')]` for guest assignments ✓
+
+#### Frontend Components [✓]
+
+1. **TableList**
+   - Displays all tables for a wedding ✓
+   - Supports adding, editing, and deleting tables ✓
+   - Shows table details including capacity and guest count ✓
+   - Provides access to guest assignment functionality ✓
+
+2. **TableForm**
+   - Form for creating and editing tables ✓
+   - Fields:
+     - Name ✓
+     - Capacity ✓
+     - Minimum Capacity ✓
+     - Shape (round, rectangular, square) ✓
+     - Location (optional) ✓
+     - VIP status ✓
+
+3. **TableAssignment**
+   - Interface for managing guest assignments ✓
+   - Displays:
+     - Currently assigned guests ✓
+     - Available guests ✓
+     - Capacity information ✓
+   - Features:
+     - Drag and drop interface ✓
+     - Search functionality ✓
+     - Validation of assignments ✓
+     - Dietary restrictions display ✓
+
+#### State Management [✓]
+
+1. **Table Slice**
+   - Manages table data in Redux store ✓
+   - Handles async operations:
+     - Fetching tables ✓
+     - Creating tables ✓
+     - Updating tables ✓
+     - Deleting tables ✓
+     - Guest assignments ✓
+   - Tracks loading and error states ✓
+
+2. **Table Service**
+   - Handles API communication ✓
+   - Methods for all table operations ✓
+   - Uses axios instance with JWT authentication ✓
+
+#### Features [✓]
+- Table creation and management ✓
+- Guest seating assignments ✓
+- Capacity tracking ✓
+- VIP table designation ✓
+- Location tracking ✓
+- Guest count monitoring ✓
+- Available seats calculation ✓
+- Assignment validation ✓
+- Dietary restrictions consideration ✓
+
 #### API Endpoints
 
 1. **Authentication**

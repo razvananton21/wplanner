@@ -112,6 +112,11 @@ export const selectFilteredGuests = (state) => {
     const filters = selectGuestFilters(state);
     
     return guests.filter(guest => {
+        // Filter out deleted guests
+        if (guest.deletedAt) {
+            return false;
+        }
+        
         // Status filter
         if (filters.status !== 'all' && guest.status !== filters.status) {
             return false;
@@ -126,13 +131,16 @@ export const selectFilteredGuests = (state) => {
         if (filters.searchQuery) {
             const searchLower = filters.searchQuery.toLowerCase();
             const fullName = `${guest.firstName} ${guest.lastName}`.toLowerCase();
-            const email = guest.email.toLowerCase();
+            const email = guest.email?.toLowerCase() || '';
             
             return fullName.includes(searchLower) || email.includes(searchLower);
         }
         
         return true;
-    });
+    }).map(guest => ({
+        ...guest,
+        plusOnes: guest.plusOnes ? guest.plusOnes.filter(plusOne => !plusOne.deletedAt) : []
+    }));
 };
 
 export default guestSlice.reducer; 

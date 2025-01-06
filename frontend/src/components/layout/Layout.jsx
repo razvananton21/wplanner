@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   AppBar,
@@ -41,6 +41,7 @@ const Layout = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const { id: weddingId } = useParams();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -62,10 +63,25 @@ const Layout = () => {
     navigate('/login');
   };
 
-  const menuItems = [
-    { text: 'Weddings', icon: <EventIcon />, path: '/weddings' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
-  ];
+  const getMenuItems = () => {
+    const items = [
+      { text: 'Weddings', icon: <EventIcon />, path: '/weddings' },
+      { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+    ];
+
+    // Only show Tables menu item when we're in a wedding context
+    if (weddingId) {
+      items.splice(1, 0, {
+        text: 'Tables',
+        icon: <TableChartIcon />,
+        path: `/weddings/${weddingId}/tables`,
+      });
+    }
+
+    return items;
+  };
+
+  const menuItems = getMenuItems();
 
   const drawer = (
     <Box sx={{ mt: 2 }}>

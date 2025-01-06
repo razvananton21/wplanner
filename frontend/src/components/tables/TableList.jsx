@@ -1,194 +1,200 @@
-import { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import {
-  Container,
-  Typography,
-  Box,
-  Button,
-  Grid,
-  Paper,
-  CircularProgress,
-  Alert,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+    Box,
+    Grid,
+    Typography,
+    Button,
+    Card,
+    CardContent,
+    CardActions,
+    IconButton,
+    Dialog,
+    useTheme,
+    useMediaQuery,
+    LinearProgress,
+    Alert
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
-import { motion } from 'framer-motion';
-import { weddingService } from '../../services/api';
+import {
+    Add as AddIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon,
+    Group as GroupIcon
+} from '@mui/icons-material';
+import { fetchTables, deleteTable } from '../../store/slices/tableSlice';
+import TableForm from './TableForm';
+import TableAssignment from './TableAssignment';
 
 const TableList = () => {
-  const { id: weddingId } = useParams();
-  const [tables, setTables] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [newTable, setNewTable] = useState({ name: '', capacity: 8 });
+    const { id: weddingId } = useParams();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const dispatch = useDispatch();
+    const { tables, loading, error } = useSelector((state) => state.tables);
 
-  useEffect(() => {
-    const fetchTables = async () => {
-      try {
-        const response = await weddingService.getWedding(weddingId);
-        setTables(response.wedding.tables || []);
-        setError(null);
-      } catch (err) {
-        setError(err.message || 'Failed to fetch tables');
-      } finally {
-        setLoading(false);
-      }
+    const [openForm, setOpenForm] = useState(false);
+    const [selectedTable, setSelectedTable] = useState(null);
+    const [openAssignment, setOpenAssignment] = useState(false);
+
+    useEffect(() => {
+        if (weddingId) {
+            dispatch(fetchTables(weddingId));
+        }
+    }, [dispatch, weddingId]);
+
+    const handleOpenForm = (table = null) => {
+        setSelectedTable(table);
+        setOpenForm(true);
     };
 
-    fetchTables();
-  }, [weddingId]);
+    const handleCloseForm = () => {
+        setSelectedTable(null);
+        setOpenForm(false);
+    };
 
-  const handleAddTable = () => {
-    setNewTable({ name: '', capacity: 8 });
-    setDialogOpen(true);
-  };
+    const handleOpenAssignment = (table) => {
+        const tableWithWedding = {
+            ...table,
+            wedding: { id: weddingId }
+        };
+        setSelectedTable(tableWithWedding);
+        setOpenAssignment(true);
+    };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-  };
+    const handleCloseAssignment = () => {
+        setSelectedTable(null);
+        setOpenAssignment(false);
+    };
 
-  const handleSaveTable = async () => {
-    try {
-      // TODO: Implement table creation API call
-      // const response = await weddingService.createTable(weddingId, newTable);
-      // setTables([...tables, response.table]);
-      setDialogOpen(false);
-      setError(null);
-    } catch (err) {
-      setError(err.message || 'Failed to create table');
+    const handleDelete = async (tableId) => {
+        if (window.confirm('Are you sure you want to delete this table?')) {
+            await dispatch(deleteTable(tableId));
+            dispatch(fetchTables(weddingId));
+        }
+    };
+
+    if (loading && tables.length === 0) {
+        return <LinearProgress />;
     }
-  };
 
-  if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return (
-    <Container maxWidth="lg">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box sx={{ mt: 4, mb: 4 }}>
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 4,
-            }}
-          >
-            <Typography variant="h4" component="h1">
-              Tables
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleAddTable}
-            >
-              Add Table
-            </Button>
-          </Box>
-
-          <Grid container spacing={3}>
-            {tables.map((table) => (
-              <Grid item xs={12} sm={6} md={4} key={table.id}>
-                <Paper
-                  sx={{
-                    p: 3,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
+        <Box sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h5" component="h2">
+                    Tables
+                </Typography>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleOpenForm()}
                 >
-                  <Typography variant="h6" gutterBottom>
-                    {table.name}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Capacity: {table.capacity}
-                  </Typography>
-                  <Typography color="text.secondary" sx={{ mt: 1 }}>
-                    Guests: {table.guests?.length || 0} / {table.capacity}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-
-          {tables.length === 0 && (
-            <Box
-              sx={{
-                textAlign: 'center',
-                py: 8,
-                bgcolor: 'background.paper',
-                borderRadius: 2,
-                mt: 4,
-              }}
-            >
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No tables yet
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Add tables to start organizing your seating arrangement
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAddTable}
-              >
-                Add First Table
-              </Button>
+                    Add Table
+                </Button>
             </Box>
-          )}
-        </Box>
-      </motion.div>
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog}>
-        <DialogTitle>Add New Table</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <TextField
-              fullWidth
-              label="Table Name"
-              value={newTable.name}
-              onChange={(e) => setNewTable({ ...newTable, name: e.target.value })}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              type="number"
-              label="Capacity"
-              value={newTable.capacity}
-              onChange={(e) => setNewTable({ ...newTable, capacity: parseInt(e.target.value, 10) })}
-              inputProps={{ min: 1 }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSaveTable} variant="contained">
-            Add Table
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
-  );
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                </Alert>
+            )}
+
+            <Grid container spacing={2}>
+                {tables.map((table) => (
+                    <Grid item xs={12} sm={6} md={4} key={table.id}>
+                        <Card
+                            sx={{
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                position: 'relative'
+                            }}
+                        >
+                            <CardContent sx={{ flexGrow: 1 }}>
+                                <Typography variant="h6" component="h3" gutterBottom>
+                                    {table.name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Shape: {table.shape}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Capacity: {table.guestCount}/{table.capacity}
+                                </Typography>
+                                {table.location && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Location: {table.location}
+                                    </Typography>
+                                )}
+                                {table.isVIP && (
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            color: 'primary.main',
+                                            fontWeight: 'bold',
+                                            mt: 1
+                                        }}
+                                    >
+                                        VIP Table
+                                    </Typography>
+                                )}
+                            </CardContent>
+                            <CardActions sx={{ justifyContent: 'flex-end' }}>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => handleOpenAssignment(table)}
+                                    title="Assign Guests"
+                                >
+                                    <GroupIcon />
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => handleOpenForm(table)}
+                                    title="Edit Table"
+                                >
+                                    <EditIcon />
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => handleDelete(table.id)}
+                                    title="Delete Table"
+                                >
+                                    <DeleteIcon />
+                                </IconButton>
+                            </CardActions>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
+
+            <Dialog
+                open={openForm}
+                onClose={handleCloseForm}
+                maxWidth="sm"
+                fullWidth
+                fullScreen={isMobile}
+            >
+                <TableForm
+                    weddingId={weddingId}
+                    table={selectedTable}
+                    onClose={handleCloseForm}
+                />
+            </Dialog>
+
+            <Dialog
+                open={openAssignment}
+                onClose={handleCloseAssignment}
+                maxWidth="md"
+                fullWidth
+                fullScreen={isMobile}
+            >
+                <TableAssignment
+                    table={selectedTable}
+                    onClose={handleCloseAssignment}
+                />
+            </Dialog>
+        </Box>
+    );
 };
 
 export default TableList; 

@@ -186,13 +186,34 @@ class Guest
    - Proper handling of RSVP updates
    - Historical data preservation through soft deletes
 
-### 4. Table Management [⏳]
-- Table creation and management
-- Guest seating assignments
-- Drag-and-drop interface
-- Table capacity management
-- Dietary restrictions visualization
-- Conflict detection (e.g., seating restrictions)
+### 4. Table Management [✓]
+- Table creation and management ✓
+  - Name, capacity, and shape configuration ✓
+  - VIP table designation ✓
+  - Location tracking ✓
+  - Minimum capacity settings ✓
+  - Available seats monitoring ✓
+- Guest seating assignments ✓
+  - Drag-and-drop interface ✓
+  - Search functionality ✓
+  - Capacity validation ✓
+  - Dietary restrictions display ✓
+  - Guest count tracking ✓
+- Table capacity management ✓
+  - Maximum capacity limits ✓
+  - Minimum capacity requirements ✓
+  - Available seats calculation ✓
+  - Capacity validation ✓
+- Dietary restrictions visualization ✓
+  - Display in guest list ✓
+  - Consideration during assignments ✓
+  - Warning indicators ✓
+- Conflict detection ✓
+  - Capacity limit enforcement ✓
+  - Assignment validation ✓
+  - Real-time feedback ✓
+  - Wedding membership validation ✓
+  - Duplicate assignment prevention ✓
 
 ### 5. Wedding Details [⏳]
 - Basic wedding information

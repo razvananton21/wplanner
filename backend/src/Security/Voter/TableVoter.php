@@ -12,7 +12,7 @@ class TableVoter extends Voter
 {
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return in_array($attribute, ['edit', 'delete', 'assign_guests'])
+        return in_array($attribute, ['view', 'edit', 'delete', 'assign_guests'])
             && $subject instanceof Table;
     }
 
@@ -27,9 +27,16 @@ class TableVoter extends Voter
         $table = $subject;
 
         return match($attribute) {
+            'view' => $this->canView($table, $user),
             'edit', 'delete', 'assign_guests' => $this->canManage($table, $user),
             default => false,
         };
+    }
+
+    private function canView(Table $table, UserInterface $user): bool
+    {
+        // Allow if user is the admin of the wedding
+        return $table->getWedding()->getAdmin() === $user;
     }
 
     private function canManage(Table $table, UserInterface $user): bool

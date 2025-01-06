@@ -288,7 +288,9 @@ class Guest
                     'firstName' => $guest->getFirstName(),
                     'lastName' => $guest->getLastName()
                 ];
-            }, $this->plusOnes->toArray()),
+            }, array_filter($this->plusOnes->toArray(), function(self $guest) {
+                return !$guest->getDeletedAt();
+            })),
             'deletedAt' => $this->deletedAt?->format('c')
         ];
     }
