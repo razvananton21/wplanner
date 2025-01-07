@@ -30,8 +30,37 @@ class GuestController extends AbstractController
     public function list(Wedding $wedding): JsonResponse
     {
         $guests = $this->guestRepository->findByWedding($wedding);
+        
         return $this->json([
-            'data' => array_map(fn($guest) => $guest->toArray(), $guests)
+            'data' => array_map(function($guest) {
+                $guestData = $guest->toArray();
+                
+                // Add RSVP responses
+                $responses = array_map(function($response) {
+                    if (!$response || !$response->getField()) {
+                        return null;
+                    }
+                    return [
+                        'id' => $response->getId(),
+                        'field' => [
+                            'id' => $response->getField()->getId(),
+                            'label' => $response->getField()->getLabel(),
+                            'type' => $response->getField()->getType()
+                        ],
+                        'value' => $response->getValue()
+                    ];
+                }, $guest->getRsvpResponses()->toArray());
+
+                // Filter out any null responses
+                $guestData['responses'] = array_filter($responses);
+                
+                // If this guest is a plus one, include their responses in the parent guest's data
+                if ($guest->getPlusOneOf()) {
+                    $guestData['responses'] = array_filter($responses);
+                }
+                
+                return $guestData;
+            }, $guests)
         ]);
     }
 
@@ -134,81 +163,6 @@ class GuestController extends AbstractController
         $this->entityManager->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
-    }
-
-    #[Route('/rsvp/{token}', name: 'app_guests_rsvp', methods: ['POST'], priority: 1)]
-    public function rsvp(string $token, Request $request): JsonResponse
-    {
-        $guest = $this->guestRepository->findByRsvpToken($token);
-        if (!$guest) {
-            throw $this->createNotFoundException('Invalid RSVP token');
-        }
-
-        $responses = array_map(function($response) {
-            if (!$response || !$response->getField()) {
-                return null;
-            }
-            return [
-                'id' => $response->getId(),
-                'field' => [
-                    'id' => $response->getField()->getId(),
-                    'label' => $response->getField()->getLabel(),
-                    'type' => $response->getField()->getType()
-                ],
-                'value' => $response->getValue()
-            ];
-        }, $guest->getRsvpResponses()->toArray());
-
-        // Filter out any null responses
-        $responses = array_filter($responses);
-
-        $plusOneDetails = null;
-        if (!$guest->getPlusOnes()->isEmpty()) {
-            $plusOne = $guest->getPlusOnes()->first();
-            $plusOneResponses = array_map(function($response) {
-                if (!$response || !$response->getField()) {
-                    return null;
-                }
-                return [
-                    'id' => $response->getId(),
-                    'field' => [
-                        'id' => $response->getField()->getId(),
-                        'label' => $response->getField()->getLabel(),
-                        'type' => $response->getField()->getType()
-                    ],
-                    'value' => $response->getValue()
-                ];
-            }, $plusOne->getRsvpResponses()->toArray());
-
-            $plusOneDetails = array_merge(
-                $plusOne->toArray(),
-                ['responses' => array_filter($plusOneResponses)]
-            );
-        }
-
-        return $this->json([
-            'data' => [
-                'id' => $guest->getId(),
-                'firstName' => $guest->getFirstName(),
-                'lastName' => $guest->getLastName(),
-                'email' => $guest->getEmail(),
-                'status' => $guest->getStatus(),
-                'wedding' => [
-                    'id' => $guest->getWedding()->getId(),
-                    'title' => $guest->getWedding()->getTitle(),
-                    'invitationPdfUrl' => $guest->getWedding()->getInvitationPdfUrl(),
-                    'date' => $guest->getWedding()->getDate()->format('c'),
-                    'venue' => $guest->getWedding()->getVenue()
-                ],
-                'responses' => $responses,
-                'attending' => $guest->getStatus() === 'confirmed',
-                'needsUpdate' => false,
-                'message' => null,
-                'canBringPlusOne' => $guest->canBringPlusOne(),
-                'hasPlusOne' => !$guest->getPlusOnes()->isEmpty(),
-                'plusOneDetails' => $plusOneDetails
-            ]
-        ]);
     }
 
     #[Route('/weddings/{id}/guests/bulk', name: 'app_guests_bulk_create', methods: ['POST'])]

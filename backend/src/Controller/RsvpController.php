@@ -29,74 +29,6 @@ class RsvpController extends AbstractController
         private LoggerInterface $logger
     ) {}
 
-    #[Route('/rsvp/{token}/guest', name: 'app_rsvp_get_guest', methods: ['GET'])]
-    public function getGuest(string $token): JsonResponse
-    {
-        $guest = $this->guestRepository->findOneBy(['rsvpToken' => $token]);
-        if (!$guest) {
-            throw $this->createNotFoundException('Invalid RSVP token');
-        }
-
-        // Get existing responses
-        $responses = $this->rsvpResponseRepository->findBy(['guest' => $guest]);
-        
-        // Check if responses need to be updated
-        $needsUpdate = false;
-        $message = null;
-        
-        // Get plus one details if exists and not deleted
-        $plusOneDetails = null;
-        $hasPlusOne = false;
-        if (!$guest->getPlusOnes()->isEmpty()) {
-            $plusOneGuest = $guest->getPlusOnes()->first();
-            // Only include plus one if they're not deleted
-            if ($plusOneGuest->getDeletedAt() === null) {
-                $hasPlusOne = true;
-                $plusOneDetails = [
-                    'firstName' => $plusOneGuest->getFirstName(),
-                    'lastName' => $plusOneGuest->getLastName(),
-                    'email' => $plusOneGuest->getEmail(),
-                    'attending' => $plusOneGuest->getStatus() === 'confirmed',
-                    'responses' => array_map(function(RsvpResponse $response) {
-                        return [
-                            'fieldId' => $response->getField() ? $response->getField()->getId() : null,
-                            'value' => $response->getValue(),
-                            'isObsolete' => $response->getField() === null
-                        ];
-                    }, $this->rsvpResponseRepository->findBy(['guest' => $plusOneGuest]))
-                ];
-            }
-        }
-
-        return $this->json([
-            'data' => [
-                'id' => $guest->getId(),
-                'firstName' => $guest->getFirstName(),
-                'lastName' => $guest->getLastName(),
-                'email' => $guest->getEmail(),
-                'status' => $guest->getStatus(),
-                'wedding' => [
-                    'id' => $guest->getWedding()->getId(),
-                    'title' => $guest->getWedding()->getTitle()
-                ],
-                'responses' => array_map(function(RsvpResponse $response) {
-                    $field = $response->getField();
-                    return [
-                        'fieldId' => $field ? $field->getId() : null,
-                        'value' => $response->getValue(),
-                        'isObsolete' => $field === null
-                    ];
-                }, $responses),
-                'attending' => $guest->getStatus() === 'confirmed',
-                'needsUpdate' => $needsUpdate,
-                'message' => $message,
-                'canBringPlusOne' => $guest->canBringPlusOne(),
-                'hasPlusOne' => $hasPlusOne,
-                'plusOneDetails' => $plusOneDetails
-            ]
-        ]);
-    }
-
     #[Route('/rsvp/{token}/fields', name: 'app_rsvp_get_fields', methods: ['GET'])]
     public function getFields(string $token): JsonResponse
     {
@@ -263,31 +195,6 @@ class RsvpController extends AbstractController
                 }, $this->rsvpResponseRepository->findBy(['guest' => $guest])),
                 'plusOne' => $guest->getPlusOnes()->isEmpty() ? null : $guest->getPlusOnes()->first()->toArray()
             ]
-        ]);
-    }
-
-    #[Route('/weddings/{weddingId}/guests/{guestId}/rsvp', name: 'app_rsvp_get', methods: ['GET'])]
-    public function getRsvpResponses(int $weddingId, int $guestId): JsonResponse
-    {
-        $guest = $this->guestRepository->find($guestId);
-        if (!$guest || $guest->getWedding()->getId() !== $weddingId) {
-            throw $this->createNotFoundException('Guest not found');
-        }
-
-        $responses = $this->rsvpResponseRepository->findBy(['guest' => $guest]);
-        
-        return $this->json([
-            'data' => array_map(function(RsvpResponse $response) {
-                return [
-                    'id' => $response->getId(),
-                    'field' => [
-                        'id' => $response->getField()->getId(),
-                        'label' => $response->getField()->getLabel(),
-                        'type' => $response->getField()->getType()
-                    ],
-                    'value' => $response->getValue()
-                ];
-            }, $responses)
         ]);
     }
 } 

@@ -92,7 +92,7 @@ const GuestList = () => {
     };
 
     const renderRsvpResponses = (guest) => {
-        if (!guest.rsvpResponses || guest.rsvpResponses.length === 0) {
+        if (!guest.responses || guest.responses.length === 0) {
             return (
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                     No RSVP responses yet
@@ -102,7 +102,7 @@ const GuestList = () => {
 
         return (
             <List dense sx={{ mt: 1 }}>
-                {guest.rsvpResponses.map((response, index) => (
+                {guest.responses.map((response, index) => (
                     <React.Fragment key={index}>
                         <ListItem>
                             <ListItemText
@@ -110,7 +110,7 @@ const GuestList = () => {
                                 secondary={response.value || 'No response'}
                             />
                         </ListItem>
-                        {index < guest.rsvpResponses.length - 1 && <Divider />}
+                        {index < guest.responses.length - 1 && <Divider />}
                     </React.Fragment>
                 ))}
             </List>
@@ -223,7 +223,7 @@ const GuestList = () => {
                             <Typography variant="subtitle2" color="primary" gutterBottom>
                                 RSVP Responses
                             </Typography>
-                            {guest.rsvpResponses?.filter(response => response.value && response.value !== '')
+                            {guest.responses?.filter(response => response.value && response.value !== '')
                                 .map((response, index) => (
                                     <Box key={index} sx={{ mt: 1 }}>
                                         <Typography variant="body2" color="text.secondary">
@@ -232,8 +232,8 @@ const GuestList = () => {
                                     </Box>
                                 ))
                             }
-                            {(!guest.rsvpResponses || guest.rsvpResponses.length === 0 || 
-                              !guest.rsvpResponses.some(response => response.value && response.value !== '')) && (
+                            {(!guest.responses || guest.responses.length === 0 || 
+                              !guest.responses.some(response => response.value && response.value !== '')) && (
                                 <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                                     No responses yet
                                 </Typography>

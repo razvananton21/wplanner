@@ -284,7 +284,7 @@ export default function RsvpPage() {
         const initialFormData = {
           // Set attending to true for 'pending' or 'confirmed' status, false for 'declined'
           attending: guestResponse.data.status === 'declined' ? false : true,
-          hasPlusOne: guestResponse.data.hasPlusOne || false,
+          hasPlusOne: guestResponse.data.canBringPlusOne || false,
           plusOne: {
             attending: guestResponse.data.plusOneDetails?.status === 'confirmed' ?? true,
             firstName: guestResponse.data.plusOneDetails?.firstName ?? '',

@@ -22,53 +22,6 @@ class GuestRepository extends ServiceEntityRepository
         parent::__construct($registry, Guest::class);
     }
 
-    public function save(Guest $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(Guest $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function findByTable(int $tableId): array
-    {
-        return $this->createQueryBuilder('g')
-            ->andWhere('g.table = :tableId')
-            ->setParameter('tableId', $tableId)
-            ->orderBy('g.name', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    public function findByDietaryPreferences(string $preferences): array
-    {
-        return $this->createQueryBuilder('g')
-            ->andWhere('g.dietaryPreferences = :preferences')
-            ->setParameter('preferences', $preferences)
-            ->orderBy('g.name', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    public function findChildren(): array
-    {
-        return $this->createQueryBuilder('g')
-            ->andWhere('g.children = true')
-            ->orderBy('g.name', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
     public function findByWedding(Wedding $wedding)
     {
         return $this->createQueryBuilder('g')
