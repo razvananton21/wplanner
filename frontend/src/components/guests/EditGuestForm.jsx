@@ -158,7 +158,17 @@ const EditGuestForm = ({ weddingId, guest, onClose }) => {
                     <FormControlLabel
                         control={
                             <Switch
+                                checked={!!guest.plusOne}
                                 {...register('plusOne')}
+                                onChange={(e) => {
+                                    const event = {
+                                        target: {
+                                            name: 'plusOne',
+                                            value: e.target.checked
+                                        }
+                                    };
+                                    register('plusOne').onChange(event);
+                                }}
                             />
                         }
                         label="Allow Plus One"

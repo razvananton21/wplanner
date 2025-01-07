@@ -35,6 +35,7 @@ class WeddingController extends AbstractController
                 'date' => $wedding->getDate()->format('c'),
                 'venue' => $wedding->getVenue(),
                 'language' => $wedding->getLanguage(),
+                'invitationPdfUrl' => $wedding->getInvitationPdfUrl(),
             ], $managedWeddings),
             'attending' => $attendingWeddings,
         ]);
@@ -52,6 +53,7 @@ class WeddingController extends AbstractController
                 'date' => $wedding->getDate()->format('c'),
                 'venue' => $wedding->getVenue(),
                 'language' => $wedding->getLanguage(),
+                'invitationPdfUrl' => $wedding->getInvitationPdfUrl(),
                 'tables' => array_map(fn($table) => [
                     'id' => $table->getId(),
                     'name' => $table->getName(),
@@ -164,5 +166,62 @@ class WeddingController extends AbstractController
         $entityManager->flush();
 
         return $this->json(['message' => 'Wedding deleted successfully']);
+    }
+
+    #[Route('/{id}/invitation', name: 'app_wedding_upload_invitation', methods: ['POST'])]
+    public function uploadInvitation(
+        Wedding $wedding,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        string $uploadDir
+    ): JsonResponse {
+        // Check if user is the admin of this wedding
+        if ($wedding->getAdmin() !== $this->getUser()) {
+            return $this->json(['message' => 'Access denied'], Response::HTTP_FORBIDDEN);
+        }
+
+        $file = $request->files->get('invitation');
+        if (!$file) {
+            return $this->json(['message' => 'No file uploaded'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($file->getMimeType() !== 'application/pdf') {
+            return $this->json(['message' => 'Only PDF files are allowed'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            // Create uploads directory if it doesn't exist
+            $uploadPath = $uploadDir . '/invitations';
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
+            // Generate unique filename
+            $filename = sprintf('%s-%s.pdf', $wedding->getId(), uniqid());
+            
+            // Move file to uploads directory
+            $file->move($uploadPath, $filename);
+            
+            // Delete old file if exists
+            if ($wedding->getInvitationPdfUrl()) {
+                $oldFile = $uploadDir . $wedding->getInvitationPdfUrl();
+                if (file_exists($oldFile)) {
+                    unlink($oldFile);
+                }
+            }
+            
+            // Update wedding with new invitation URL
+            $wedding->setInvitationPdfUrl('/uploads/invitations/' . $filename);
+            $entityManager->flush();
+
+            return $this->json([
+                'message' => 'Invitation uploaded successfully',
+                'invitationUrl' => $wedding->getInvitationPdfUrl()
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'message' => 'Failed to upload invitation: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 } 

@@ -15,6 +15,10 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+        uploads:
+            pattern: ^/api/uploads
+            stateless: true
+            security: false
         login:
             pattern: ^/api/auth/login
             stateless: true
@@ -49,6 +53,7 @@ security:
         - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/rsvp, roles: PUBLIC_ACCESS }
+        - { path: ^/api/uploads, roles: PUBLIC_ACCESS }
         - { path: ^/api/weddings/\d+/form-fields, roles: PUBLIC_ACCESS }
         - { path: ^/api/test/public, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

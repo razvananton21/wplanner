@@ -90,7 +90,7 @@ class RsvpController extends AbstractController
                 'attending' => $guest->getStatus() === 'confirmed',
                 'needsUpdate' => $needsUpdate,
                 'message' => $message,
-                'canBringPlusOne' => $guest->isPlusOne(),
+                'canBringPlusOne' => $guest->canBringPlusOne(),
                 'hasPlusOne' => $hasPlusOne,
                 'plusOneDetails' => $plusOneDetails
             ]

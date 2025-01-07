@@ -18,6 +18,7 @@ import {
   MenuItem,
   Tabs,
   Tab,
+  IconButton,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -30,9 +31,12 @@ import {
   People as PeopleIcon,
   TableChart as TableChartIcon,
   Email as EmailIcon,
+  InsertDriveFile as FileIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import { weddingService } from '../../services/api';
+import weddingService from '../../services/weddingService';
+import InvitationUpload from '../invitation/InvitationUpload';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -54,6 +58,8 @@ const WeddingDetails = () => {
   const [editData, setEditData] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchWedding = async () => {
@@ -127,6 +133,25 @@ const WeddingDetails = () => {
     } else {
       setActiveTab(newValue);
     }
+  };
+
+  const handleInvitationUploadSuccess = async () => {
+    try {
+      const response = await weddingService.getWedding(id);
+      setWedding(response.wedding);
+      setEditData(response.wedding);
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Failed to refresh wedding details');
+    }
+  };
+
+  const handleOpenPdf = () => {
+    setPdfModalOpen(true);
+  };
+
+  const handleClosePdf = () => {
+    setPdfModalOpen(false);
   };
 
   if (loading) {
@@ -232,6 +257,12 @@ const WeddingDetails = () => {
                 label="RSVP Form"
                 value="rsvp-form"
                 icon={<EmailIcon />}
+                iconPosition="start"
+              />
+              <Tab
+                label="Invitation"
+                value="invitation"
+                icon={<FileIcon />}
                 iconPosition="start"
               />
             </Tabs>
@@ -378,6 +409,67 @@ const WeddingDetails = () => {
                 </Grid>
               </Grid>
             )}
+
+            {activeTab === 'invitation' && (
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Wedding Invitation
+                  </Typography>
+                  {wedding.invitationPdfUrl ? (
+                    <Box sx={{ mb: 3 }}>
+                      <Alert severity="success" sx={{ mb: 2 }}>
+                        Invitation PDF has been uploaded
+                      </Alert>
+                      <Button
+                        variant="outlined"
+                        onClick={handleOpenPdf}
+                        sx={{ mr: 2 }}
+                      >
+                        View Current Invitation
+                      </Button>
+                      {showUploadForm ? (
+                        <>
+                          <Button
+                            variant="outlined"
+                            color="secondary"
+                            onClick={() => setShowUploadForm(false)}
+                            sx={{ mr: 2 }}
+                          >
+                            Cancel Replace
+                          </Button>
+                          <InvitationUpload
+                            weddingId={wedding.id}
+                            onUploadSuccess={() => {
+                              handleInvitationUploadSuccess();
+                              setShowUploadForm(false);
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => setShowUploadForm(true)}
+                        >
+                          Replace Invitation
+                        </Button>
+                      )}
+                    </Box>
+                  ) : (
+                    <Box sx={{ mb: 3 }}>
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        No invitation PDF uploaded yet
+                      </Alert>
+                      <InvitationUpload
+                        weddingId={wedding.id}
+                        onUploadSuccess={handleInvitationUploadSuccess}
+                      />
+                    </Box>
+                  )}
+                </Grid>
+              </Grid>
+            )}
           </Paper>
         </Box>
       </motion.div>
@@ -399,6 +491,46 @@ const WeddingDetails = () => {
             Delete
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* PDF Viewer Modal */}
+      <Dialog
+        open={pdfModalOpen}
+        onClose={handleClosePdf}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            height: '90vh',
+            maxHeight: '90vh',
+          },
+        }}
+      >
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Wedding Invitation
+          <IconButton
+            aria-label="close"
+            onClick={handleClosePdf}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
+          {wedding?.invitationPdfUrl && (
+            <iframe
+              src={`/api${wedding.invitationPdfUrl}`}
+              width="100%"
+              height="100%"
+              style={{ border: 'none' }}
+              title="Wedding Invitation PDF"
+            />
+          )}
+        </DialogContent>
       </Dialog>
     </Container>
   );

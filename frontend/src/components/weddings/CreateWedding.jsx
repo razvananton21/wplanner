@@ -17,7 +17,7 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { motion } from 'framer-motion';
-import { weddingService } from '../../services/api';
+import weddingService from '../../services/weddingService';
 
 const schema = yup.object().shape({
   title: yup.string().required('Title is required'),

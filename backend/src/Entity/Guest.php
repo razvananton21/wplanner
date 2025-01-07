@@ -152,7 +152,7 @@ class Guest
         return $this;
     }
 
-    public function isPlusOne(): bool
+    public function canBringPlusOne(): bool
     {
         return $this->plusOne;
     }
@@ -293,5 +293,10 @@ class Guest
             })),
             'deletedAt' => $this->deletedAt?->format('c')
         ];
+    }
+
+    public function isAPlusOne(): bool
+    {
+        return $this->plusOneOf !== null;
     }
 } 

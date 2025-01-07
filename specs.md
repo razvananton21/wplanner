@@ -524,9 +524,14 @@ class Table
 
 #### Authentication
 - JWT-based authentication
-- Token generation with private/public key pair
-- Token validation middleware
-- Role-based access control
+  - Token expiration set to 7 days (604800 seconds)
+  - Token generation with private/public key pair
+  - Token validation middleware
+  - Role-based access control
+  - User email as token identifier
+  - Bearer token authorization
+  - Query parameter token support
+  - No cookie-based tokens
 
 #### Data Protection
 - HTTPS enforcement
@@ -647,3 +652,14 @@ class Table
 - Bulk Import:
   - Supports plus-one flag in import data
   - Maintains plus-one relationships
+
+### Code Maintenance [✓]
+- Regular cleanup of unused entities and files
+  - Removed unused `GuestResponse` entity and repository
+  - Removed unused `TableConfiguration` entity
+  - Fixed incorrect `setName` usage in `User` entity
+  - Proper separation between `firstName` and `lastName`
+- Consistent file organization
+- Clear component hierarchy
+- Proper separation of concerns
+- Documentation of changes in specification files

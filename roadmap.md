@@ -2,6 +2,11 @@
 
 ## Current Implementation Status [✓]
 - Authentication System
+  - JWT with 7-day expiration
+  - Email-based token identifier
+  - Bearer token authorization
+  - Query parameter token support
+  - Proper user name handling
 - Basic Guest Management
   - CRUD operations
   - Guest categories
@@ -17,15 +22,25 @@
 - Email Integration
 - Soft Delete
 - Logging
+- Code Maintenance
+  - Removed unused entities
+  - Fixed entity relationships
+  - Improved code organization
 
 ## Phase 1 - Core MVP [In Progress]
-1. **Enhanced RSVP Features** [✓]
+1. **Enhanced Authentication** [⏳]
+   - Google OAuth integration
+   - Social login support
+   - Token refresh mechanism
+   - Session management improvements
+
+2. **Enhanced RSVP Features** [✓]
    - Plus-one management ✓
    - Group RSVP handling
    - Smart dietary requirements
    - Response analytics
 
-2. **Basic Table Management** [✓]
+3. **Basic Table Management** [✓]
    - Table creation ✓
    - Guest assignment ✓
    - Capacity tracking ✓
@@ -39,7 +54,7 @@
    - Wedding membership validation ✓
    - Duplicate assignment prevention ✓
 
-3. **Essential Wedding Details** [⏳]
+4. **Essential Wedding Details** [⏳]
    - Basic information
    - Timeline overview
    - Vendor contacts

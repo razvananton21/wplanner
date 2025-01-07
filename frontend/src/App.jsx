@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
@@ -21,46 +20,23 @@ import RsvpPage from './components/rsvp/RsvpPage';
 import FormBuilder from './components/form-builder/FormBuilder';
 
 const App = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      const currentPath = window.location.pathname;
-      // console.log('App - Checking token:', token);
-
-      // Skip auth check for public routes
-      if (currentPath.startsWith('/rsvp/') || currentPath === '/login' || currentPath === '/register') {
+      try {
+        await dispatch(initializeAuth()).unwrap();
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+      } finally {
         setIsInitializing(false);
-        return;
       }
-
-      if (token) {
-        // console.log('App - Found token in localStorage, initializing auth');
-        try {
-          await dispatch(initializeAuth()).unwrap();
-          // console.log('App - Auth initialized successfully');
-          
-          // Only redirect if we're on the login page
-          if (currentPath === '/login') {
-            navigate('/');
-          }
-        } catch (error) {
-          console.error('App - Auth initialization failed:', error);
-          localStorage.removeItem('token');
-          navigate('/login');
-        }
-      } else {
-        console.log('App - No token found');
-        navigate('/login');
-      }
-      setIsInitializing(false);
     };
 
     initAuth();
-  }, [dispatch, navigate]);
+  }, [dispatch]);
 
   if (isInitializing) {
     return (
@@ -77,7 +53,7 @@ const App = () => {
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <>
       <CssBaseline />
       <Routes>
         {/* Public Routes */}
@@ -101,7 +77,7 @@ const App = () => {
         {/* 404 Route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </ThemeProvider>
+    </>
   );
 };
 

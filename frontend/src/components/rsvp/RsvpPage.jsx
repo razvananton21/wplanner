@@ -31,6 +31,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { rsvpService } from '../../services/rsvpService';
 import { useDispatch } from 'react-redux';
 import { fetchGuests } from '../../features/guests/guestSlice';
+import InvitationViewer from '../invitation/InvitationViewer';
 
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -257,6 +258,7 @@ export default function RsvpPage() {
   const [guest, setGuest] = useState(null);
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updateMessage, setUpdateMessage] = useState(null);
+  const [showRsvpForm, setShowRsvpForm] = useState(false);
   const dispatch = useDispatch();
 
   const theme = useTheme();
@@ -284,7 +286,7 @@ export default function RsvpPage() {
           attending: guestResponse.data.status === 'declined' ? false : true,
           hasPlusOne: guestResponse.data.hasPlusOne || false,
           plusOne: {
-            attending: guestResponse.data.plusOneDetails?.attending ?? true,
+            attending: guestResponse.data.plusOneDetails?.status === 'confirmed' ?? true,
             firstName: guestResponse.data.plusOneDetails?.firstName ?? '',
             lastName: guestResponse.data.plusOneDetails?.lastName ?? '',
             email: guestResponse.data.plusOneDetails?.email ?? '',
@@ -294,20 +296,25 @@ export default function RsvpPage() {
 
         // If there are existing responses, add them to the form data
         if (guestResponse.data.responses) {
-          guestResponse.data.responses
-            .filter(response => response.fieldId !== null && !response.isObsolete)
-            .forEach(response => {
-              initialFormData[response.fieldId.toString()] = response.value;
-            });
+          guestResponse.data.responses.forEach(response => {
+            if (response && response.field) {
+              initialFormData[response.field.id.toString()] = response.value;
+            }
+          });
         }
 
         // If there are plus one responses, add them to the form data
         if (guestResponse.data.plusOneDetails?.responses) {
-          guestResponse.data.plusOneDetails.responses
-            .filter(response => response.fieldId !== null && !response.isObsolete)
-            .forEach(response => {
-              initialFormData.plusOne.responses[response.fieldId.toString()] = response.value;
-            });
+          guestResponse.data.plusOneDetails.responses.forEach(response => {
+            if (response && response.field) {
+              initialFormData.plusOne.responses[response.field.id.toString()] = response.value;
+            }
+          });
+        }
+
+        // If the guest has a plus one, make sure hasPlusOne is set to true
+        if (guestResponse.data.plusOneDetails) {
+          initialFormData.hasPlusOne = true;
         }
 
         setFormData(initialFormData);
@@ -643,340 +650,178 @@ export default function RsvpPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'background.default'
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (success) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 2,
-          bgcolor: 'background.default'
-        }}
-      >
-        <StyledCard>
-          <CardContent sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h4" gutterBottom color="primary">
-              Thank you!
-            </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-              {formData.attending 
-                ? formData.hasPlusOne
-                  ? `We look forward to celebrating with you and ${formData.plusOne.firstName}!`
-                  : 'We look forward to celebrating with you!'
-                : "We're sorry you won't be able to join us, but thank you for letting us know."}
-            </Typography>
-            <Box component="img" src="/celebration.svg" alt="Celebration" sx={{ width: 200, opacity: 0.8 }} />
-          </CardContent>
-        </StyledCard>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 2,
-          bgcolor: 'background.default'
-        }}
-      >
-        <StyledCard>
-          <CardContent>
-            <Alert 
-              severity="error"
-              sx={{
-                borderRadius: 2,
-                '& .MuiAlert-icon': {
-                  fontSize: '2rem'
-                }
-              }}
-            >
-              {error}
-            </Alert>
-          </CardContent>
-        </StyledCard>
-      </Box>
-    );
-  }
+  const handleRsvpClick = () => {
+    setShowRsvpForm(true);
+  };
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        p: { xs: 2, sm: 4 },
-        bgcolor: 'background.default',
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.4) 100%)',
-        backgroundSize: 'cover'
+        p: 3,
+        gap: 3
       }}
     >
-      <StyledCard>
-        <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
-          <Typography 
-            variant="h3" 
-            align="center" 
-            sx={{ 
-              mb: 4,
-              fontSize: { xs: '2rem', sm: '2.5rem' },
-              fontWeight: 700,
-              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              letterSpacing: '-0.5px'
-            }}
-          >
-            Wedding RSVP
-          </Typography>
-
-          {guest && (
-            <Typography 
-              variant="h5" 
-              color="text.secondary" 
-              align="center" 
-              sx={{ 
-                mb: 4,
-                fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                fontWeight: 500,
-                letterSpacing: '-0.3px'
-              }}
-            >
-              Hello {guest.firstName} {guest.lastName}!
-            </Typography>
+      {loading ? (
+        <CircularProgress />
+      ) : error ? (
+        <Alert severity="error">{error}</Alert>
+      ) : (
+        <>
+          {guest?.wedding?.invitationPdfUrl && !showRsvpForm && (
+            <InvitationViewer 
+              pdfUrl={guest.wedding.invitationPdfUrl}
+              onRsvpClick={handleRsvpClick}
+            />
           )}
 
-          {needsUpdate && updateMessage && guest?.responses?.length > 0 && (
-            <Alert 
-              severity="info" 
-              sx={{ 
-                mb: 4,
-                borderRadius: theme.spacing(1.5),
-                backgroundColor: alpha(theme.palette.info.main, 0.08),
-                border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                '& .MuiAlert-icon': {
-                  color: theme.palette.info.main
-                }
-              }}
-            >
-              {updateMessage}
-            </Alert>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <Box 
-              sx={{ 
-                mb: 4,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1
-              }}
-            >
-              <AttendancePill elevation={0}>
-                <Typography 
-                  variant="h6"
-                  align="center"
-                  sx={{ 
-                    fontWeight: 600,
-                    color: formData.attending ? 'primary.main' : 'text.secondary',
-                    transition: 'color 0.3s ease',
-                    fontSize: { xs: '1.1rem', sm: '1.2rem' },
-                    mb: 0.5
-                  }}
-                >
-                  Will you attend?
+          {(!guest?.wedding?.invitationPdfUrl || showRsvpForm) && (
+            <StyledCard>
+              <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="h4" gutterBottom color="primary">
+                  Wedding RSVP
                 </Typography>
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  gap: 1
-                }}>
+
+                {guest && (
                   <Typography 
-                    variant="body1"
+                    variant="h5" 
+                    color="text.secondary" 
+                    align="center" 
                     sx={{ 
-                      opacity: !formData.attending ? 1 : 0.5,
-                      transition: 'opacity 0.3s ease',
-                      fontWeight: 500
+                      mb: 4,
+                      fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                      fontWeight: 500,
+                      letterSpacing: '-0.3px'
                     }}
                   >
-                    No
+                    Hello {guest.firstName} {guest.lastName}!
                   </Typography>
-                  <StyledSwitch
-                    checked={formData.attending}
-                    onChange={(e) => handleFieldChange('attending', e.target.checked)}
-                    color="primary"
-                  />
-                  <Typography 
-                    variant="body1"
+                )}
+
+                {needsUpdate && updateMessage && guest?.responses?.length > 0 && (
+                  <Alert 
+                    severity="info" 
                     sx={{ 
-                      opacity: formData.attending ? 1 : 0.5,
-                      transition: 'opacity 0.3s ease',
-                      fontWeight: 500
+                      mb: 4,
+                      borderRadius: theme.spacing(1.5),
+                      backgroundColor: alpha(theme.palette.info.main, 0.08),
+                      border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                      '& .MuiAlert-icon': {
+                        color: theme.palette.info.main
+                      }
                     }}
                   >
-                    Yes
-                  </Typography>
-                </Box>
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary"
-                  align="center"
-                  sx={{ 
-                    mt: 0.5,
-                    fontSize: '0.9rem',
-                    fontStyle: 'italic'
-                  }}
-                >
-                  {formData.attending 
-                    ? "We're so happy you'll be joining us!" 
-                    : "We'll miss you, but we understand"}
-                </Typography>
-              </AttendancePill>
-            </Box>
-
-            {formData.attending && (
-              <>
-                {Object.entries(
-                  fields.reduce((acc, field) => {
-                    if (!acc[field.section]) {
-                      acc[field.section] = [];
-                    }
-                    acc[field.section].push(field);
-                    return acc;
-                  }, {})
-                ).map(([section, sectionFields]) => (
-                  <SectionPaper key={section} elevation={0}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        mb: 2,
-                        color: 'primary.main',
-                        fontWeight: 'medium'
-                      }}
-                    >
-                      {SECTIONS.find(s => s.value === section)?.label || section}
-                    </Typography>
-                    <Box sx={{ '& > *': { mb: 2 } }}>
-                      {sectionFields.map(field => renderField(field, false))}
-                    </Box>
-                  </SectionPaper>
-                ))}
-
-                {guest?.canBringPlusOne && (
-                  <SectionPaper elevation={0}>
-                    <Box sx={{ mb: 3 }}>
+                    {updateMessage}
+                  </Alert>
+                )}
+                
+                <form onSubmit={handleSubmit}>
+                  <Box 
+                    sx={{ 
+                      mb: 4,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 1
+                    }}
+                  >
+                    <AttendancePill elevation={0}>
                       <Typography 
-                        variant="h6" 
+                        variant="h6"
+                        align="center"
                         sx={{ 
-                          mb: 2,
-                          color: 'primary.main',
-                          fontWeight: 'medium'
+                          fontWeight: 600,
+                          color: formData.attending ? 'primary.main' : 'text.secondary',
+                          transition: 'color 0.3s ease',
+                          fontSize: { xs: '1.1rem', sm: '1.2rem' },
+                          mb: 0.5
                         }}
                       >
-                        Additional Guest
+                        Will you attend?
                       </Typography>
-                      <FormControlLabel
-                        control={
-                          <StyledSwitch
-                            checked={formData.hasPlusOne}
-                            onChange={(e) => setFormData(prev => ({
-                              ...prev,
-                              hasPlusOne: e.target.checked
-                            }))}
-                          />
-                        }
-                        label="I'm bringing a guest"
-                      />
-                    </Box>
-
-                    {formData.hasPlusOne && (
-                      <Box sx={{ mt: 2 }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
                         <Typography 
-                          variant="subtitle1" 
-                          color="text.secondary"
-                          sx={{ mb: 3 }}
+                          variant="body1"
+                          sx={{ 
+                            opacity: !formData.attending ? 1 : 0.5,
+                            transition: 'opacity 0.3s ease',
+                            fontWeight: 500
+                          }}
                         >
-                          Please provide your guest's details
+                          No
                         </Typography>
+                        <StyledSwitch
+                          checked={formData.attending}
+                          onChange={(e) => handleFieldChange('attending', e.target.checked)}
+                          color="primary"
+                        />
+                        <Typography 
+                          variant="body1"
+                          sx={{ 
+                            opacity: formData.attending ? 1 : 0.5,
+                            transition: 'opacity 0.3s ease',
+                            fontWeight: 500
+                          }}
+                        >
+                          Yes
+                        </Typography>
+                      </Box>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        align="center"
+                        sx={{ 
+                          mt: 0.5,
+                          fontSize: '0.9rem',
+                          fontStyle: 'italic'
+                        }}
+                      >
+                        {formData.attending 
+                          ? "We're so happy you'll be joining us!" 
+                          : "We'll miss you, but we understand"}
+                      </Typography>
+                    </AttendancePill>
+                  </Box>
 
-                        <Box sx={{ mb: 3 }}>
-                          <StyledTextField
-                            fullWidth
-                            label="First Name"
-                            value={formData.plusOne.firstName}
-                            onChange={(e) => setFormData(prev => ({
-                              ...prev,
-                              plusOne: {
-                                ...prev.plusOne,
-                                firstName: e.target.value
-                              }
-                            }))}
-                            required
-                            sx={{ mb: 2 }}
-                          />
-                          <StyledTextField
-                            fullWidth
-                            label="Last Name"
-                            value={formData.plusOne.lastName}
-                            onChange={(e) => setFormData(prev => ({
-                              ...prev,
-                              plusOne: {
-                                ...prev.plusOne,
-                                lastName: e.target.value
-                              }
-                            }))}
-                            required
-                            sx={{ mb: 2 }}
-                          />
-                          <StyledTextField
-                            fullWidth
-                            label="Email"
-                            type="email"
-                            value={formData.plusOne.email}
-                            onChange={(e) => setFormData(prev => ({
-                              ...prev,
-                              plusOne: {
-                                ...prev.plusOne,
-                                email: e.target.value
-                              }
-                            }))}
-                            sx={{ mb: 2 }}
-                          />
-                        </Box>
+                  {formData.attending && (
+                    <>
+                      {Object.entries(
+                        fields.reduce((acc, field) => {
+                          if (!acc[field.section]) {
+                            acc[field.section] = [];
+                          }
+                          acc[field.section].push(field);
+                          return acc;
+                        }, {})
+                      ).map(([section, sectionFields]) => (
+                        <SectionPaper key={section} elevation={0}>
+                          <Typography 
+                            variant="h6" 
+                            sx={{ 
+                              mb: 2,
+                              color: 'primary.main',
+                              fontWeight: 'medium'
+                            }}
+                          >
+                            {SECTIONS.find(s => s.value === section)?.label || section}
+                          </Typography>
+                          <Box sx={{ '& > *': { mb: 2 } }}>
+                            {sectionFields.map(field => renderField(field, false))}
+                          </Box>
+                        </SectionPaper>
+                      ))}
 
-                        {Object.entries(
-                          fields.reduce((acc, field) => {
-                            if (!acc[field.section]) {
-                              acc[field.section] = [];
-                            }
-                            acc[field.section].push(field);
-                            return acc;
-                          }, {})
-                        ).map(([section, sectionFields]) => (
-                          <Box key={`plusone-${section}`} sx={{ mb: 3 }}>
+                      {guest?.canBringPlusOne && (
+                        <SectionPaper elevation={0}>
+                          <Box sx={{ mb: 3 }}>
                             <Typography 
                               variant="h6" 
                               sx={{ 
@@ -985,33 +830,125 @@ export default function RsvpPage() {
                                 fontWeight: 'medium'
                               }}
                             >
-                              {SECTIONS.find(s => s.value === section)?.label || section}
+                              Additional Guest
                             </Typography>
-                            <Box sx={{ '& > *': { mb: 2 } }}>
-                              {sectionFields.map(field => renderField(field, true))}
-                            </Box>
+                            <FormControlLabel
+                              control={
+                                <StyledSwitch
+                                  checked={formData.hasPlusOne}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    hasPlusOne: e.target.checked
+                                  }))}
+                                />
+                              }
+                              label="I'm bringing a guest"
+                            />
                           </Box>
-                        ))}
-                      </Box>
-                    )}
-                  </SectionPaper>
-                )}
-              </>
-            )}
 
-            <StyledButton
-              type="submit"
-              variant="contained"
-              color="primary"
-              fullWidth
-              size="large"
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Submit RSVP'}
-            </StyledButton>
-          </form>
-        </CardContent>
-      </StyledCard>
+                          {formData.hasPlusOne && (
+                            <Box sx={{ mt: 2 }}>
+                              <Typography 
+                                variant="subtitle1" 
+                                color="text.secondary"
+                                sx={{ mb: 3 }}
+                              >
+                                Please provide your guest's details
+                              </Typography>
+
+                              <Box sx={{ mb: 3 }}>
+                                <StyledTextField
+                                  fullWidth
+                                  label="First Name"
+                                  value={formData.plusOne.firstName}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    plusOne: {
+                                      ...prev.plusOne,
+                                      firstName: e.target.value
+                                    }
+                                  }))}
+                                  required
+                                  sx={{ mb: 2 }}
+                                />
+                                <StyledTextField
+                                  fullWidth
+                                  label="Last Name"
+                                  value={formData.plusOne.lastName}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    plusOne: {
+                                      ...prev.plusOne,
+                                      lastName: e.target.value
+                                    }
+                                  }))}
+                                  required
+                                  sx={{ mb: 2 }}
+                                />
+                                <StyledTextField
+                                  fullWidth
+                                  label="Email"
+                                  type="email"
+                                  value={formData.plusOne.email}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    plusOne: {
+                                      ...prev.plusOne,
+                                      email: e.target.value
+                                    }
+                                  }))}
+                                  sx={{ mb: 2 }}
+                                />
+                              </Box>
+
+                              {Object.entries(
+                                fields.reduce((acc, field) => {
+                                  if (!acc[field.section]) {
+                                    acc[field.section] = [];
+                                  }
+                                  acc[field.section].push(field);
+                                  return acc;
+                                }, {})
+                              ).map(([section, sectionFields]) => (
+                                <Box key={`plusone-${section}`} sx={{ mb: 3 }}>
+                                  <Typography 
+                                    variant="h6" 
+                                    sx={{ 
+                                      mb: 2,
+                                      color: 'primary.main',
+                                      fontWeight: 'medium'
+                                    }}
+                                  >
+                                    {SECTIONS.find(s => s.value === section)?.label || section}
+                                  </Typography>
+                                  <Box sx={{ '& > *': { mb: 2 } }}>
+                                    {sectionFields.map(field => renderField(field, true))}
+                                  </Box>
+                                </Box>
+                              ))}
+                            </Box>
+                          )}
+                        </SectionPaper>
+                      )}
+                    </>
+                  )}
+
+                  <StyledButton
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    size="large"
+                    disabled={loading}
+                  >
+                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Submit RSVP'}
+                  </StyledButton>
+                </form>
+              </CardContent>
+            </StyledCard>
+          )}
+        </>
+      )}
     </Box>
   );
 } 

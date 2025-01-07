@@ -8,10 +8,16 @@ A comprehensive wedding planning application that helps couples manage their wed
 ### 1. Authentication System [✓]
 - User registration with email validation
 - JWT-based authentication
+  - 7-day token expiration
+  - Email-based token identifier
+  - Bearer token authorization
+  - Query parameter token support
+  - No cookie-based tokens
 - Role-based access control
 - Secure password handling
 - Protected routes in frontend
 - Token refresh mechanism
+- User entity with firstName and lastName separation
 
 ### 2. Guest Management System [✓]
 

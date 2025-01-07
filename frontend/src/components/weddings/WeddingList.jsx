@@ -26,7 +26,7 @@ import {
   People as PeopleIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { weddingService } from '../../services/api';
+import weddingService from '../../services/weddingService';
 
 const WeddingList = () => {
   const theme = useTheme();

@@ -52,6 +52,9 @@ class Wedding
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $deletedAt = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $invitationPdfUrl = null;
+
     public function __construct()
     {
         $this->tables = new ArrayCollection();
@@ -290,6 +293,17 @@ class Wedding
     public function setDeletedAt(?\DateTimeImmutable $deletedAt): static
     {
         $this->deletedAt = $deletedAt;
+        return $this;
+    }
+
+    public function getInvitationPdfUrl(): ?string
+    {
+        return $this->invitationPdfUrl;
+    }
+
+    public function setInvitationPdfUrl(?string $invitationPdfUrl): static
+    {
+        $this->invitationPdfUrl = $invitationPdfUrl;
         return $this;
     }
 } 

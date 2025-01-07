@@ -1,8 +1,213 @@
-# Adding New Endpoints Guide
+# API Documentation and Development Guide
 
-## Backend (Symfony)
+## Part 1: API Endpoints Documentation
 
-### 1. Create a Controller Method
+### Authentication
+
+#### Login
+- **POST** `/api/login`
+- Authenticates a user and returns a JWT token
+- **Body**:
+  ```json
+  {
+    "email": "string",
+    "password": "string"
+  }
+  ```
+
+#### Logout
+- **POST** `/api/logout`
+- Logs out the current user
+
+#### Current User
+- **GET** `/api/me`
+- Returns information about the currently authenticated user
+
+### Admin
+
+#### Register Admin
+- **POST** `/api/admin/register`
+- Registers a new admin user
+- **Body**:
+  ```json
+  {
+    "email": "string",
+    "password": "string"
+  }
+  ```
+
+#### Admin Dashboard
+- **GET** `/api/admin/dashboard`
+- Returns admin dashboard information
+
+### Weddings
+
+#### List Weddings
+- **GET** `/api/weddings`
+- Returns list of weddings for the authenticated user
+
+#### Get Wedding
+- **GET** `/api/weddings/{id}`
+- Returns detailed information about a specific wedding
+- **Required Permission**: `view` on wedding
+
+### Guests
+
+#### List Guests
+- **GET** `/api/weddings/{id}/guests`
+- Returns list of guests for a specific wedding
+- **Required Permission**: `view` on wedding
+
+#### Create Guest
+- **POST** `/api/weddings/{id}/guests`
+- Creates a new guest for a wedding
+- **Required Permission**: `edit` on wedding
+- **Body**:
+  ```json
+  {
+    "firstName": "string",
+    "lastName": "string",
+    "email": "string",
+    "category": "string",
+    "plusOne": "boolean",
+    "dietaryRestrictions": "string"
+  }
+  ```
+
+#### Delete Guest
+- **DELETE** `/api/weddings/{wedding}/guests/{id}`
+- Soft deletes a guest and their plus-ones
+- **Required Permission**: `edit` on wedding
+
+### RSVP
+
+#### Get Guest by RSVP Token
+- **GET** `/api/rsvp/{token}/guest`
+- Returns guest information using RSVP token
+
+#### Submit RSVP
+- **POST** `/api/rsvp/{token}`
+- Submits RSVP response for a guest
+- **Body**: (varies based on form fields)
+
+### Tables
+
+#### List Tables
+- **GET** `/api/weddings/{id}/tables`
+- Returns list of tables for a wedding
+- **Required Permission**: `view` on wedding
+
+#### Create Table
+- **POST** `/api/weddings/{id}/tables`
+- Creates a new table for a wedding
+- **Required Permission**: `edit` on wedding
+
+#### Delete Table
+- **DELETE** `/api/tables/{id}`
+- Deletes a table and removes guest assignments
+- **Required Permission**: `delete` on table
+
+#### Assign Guests to Table
+- **PUT** `/api/tables/{id}/guests`
+- Assigns guests to a table
+- **Required Permission**: `assign_guests` on table
+- **Body**:
+  ```json
+  {
+    "guestIds": ["string"]
+  }
+  ```
+
+### Photos
+
+#### List Photos
+- **GET** `/api/photos`
+- Returns list of photos
+- **Query Parameters**:
+  - `wedding`: Filter by wedding ID
+
+#### Create Photo
+- **POST** `/api/photos`
+- Creates a new photo
+- **Required Permission**: `ROLE_USER`
+- **Body**:
+  ```json
+  {
+    "url": "string",
+    "caption": "string",
+    "metadata": "object"
+  }
+  ```
+
+#### Get Photo
+- **GET** `/api/photos/{id}`
+- Returns photo details
+
+#### Approve Photo
+- **POST** `/api/photos/{id}/approve`
+- Approves a photo
+- **Required Permission**: `approve` on photo
+
+### Notifications
+
+#### List Notifications
+- **GET** `/api/weddings/{id}/notifications`
+- Returns list of notifications for a wedding
+- **Required Permission**: `view` on wedding
+
+#### Mark Notification as Read
+- **POST** `/api/notifications/{id}/read`
+- Marks a notification as read
+- **Required Permission**: `view` on notification.wedding
+
+#### Mark All Notifications as Read
+- **POST** `/api/weddings/{id}/notifications/read-all`
+- Marks all notifications for a wedding as read
+- **Required Permission**: `view` on wedding
+
+### Files
+
+#### Serve File
+- **GET** `/api/uploads/{type}/{filename}`
+- Serves uploaded files
+
+### Test Endpoints
+
+#### Protected Test
+- **GET** `/api/test/protected`
+- Test endpoint for authenticated requests
+
+#### Public Test
+- **GET** `/api/test/public`
+- Test endpoint for public access
+
+### Invitations
+
+#### List Invitations
+- **GET** `/api/invitations`
+- Returns list of invitations
+- **Query Parameters**:
+  - `wedding`: Filter by wedding ID
+  - `guest`: Filter by guest ID
+
+#### Create Invitation
+- **POST** `/api/invitations`
+- Creates a new invitation
+- **Required Permission**: `ROLE_USER`
+- **Body**:
+  ```json
+  {
+    "wedding": "string",
+    "guest": "string",
+    "pdfUrl": "string"
+  }
+  ```
+
+## Part 2: Adding New Endpoints Guide
+
+### Backend (Symfony)
+
+#### 1. Create a Controller Method
 ```php
 // In src/Controller/YourController.php
 
@@ -16,7 +221,7 @@ public function yourEndpoint(): JsonResponse
 }
 ```
 
-### 2. Add Security Annotations
+#### 2. Add Security Annotations
 ```php
 // For endpoints that need wedding access
 #[IsGranted('view', 'wedding')]  // For viewing wedding data
@@ -28,7 +233,7 @@ public function yourEndpoint(): JsonResponse
 #[IsGranted('delete', 'table')]  // For deleting table data
 ```
 
-### 3. Create a Voter (if needed)
+#### 3. Create a Voter (if needed)
 ```php
 // In src/Security/Voter/YourVoter.php
 
@@ -57,7 +262,7 @@ class YourVoter extends Voter
 }
 ```
 
-### 4. Add Entity (if needed)
+#### 4. Add Entity (if needed)
 ```php
 // In src/Entity/YourEntity.php
 
@@ -73,15 +278,15 @@ class YourEntity
 }
 ```
 
-### 5. Create Migration
+#### 5. Create Migration
 ```bash
 php bin/console make:migration
 php bin/console doctrine:migrations:migrate
 ```
 
-## Frontend (React)
+### Frontend (React)
 
-### 1. Add API Service Method
+#### 1. Add API Service Method
 ```javascript
 // In src/services/yourService.js
 
@@ -113,7 +318,7 @@ const yourService = {
 export { yourService };
 ```
 
-### 2. Create Redux Slice
+#### 2. Create Redux Slice
 ```javascript
 // In src/store/slices/yourSlice.js
 
@@ -160,7 +365,7 @@ export const { clearError } = yourSlice.actions;
 export default yourSlice.reducer;
 ```
 
-### 3. Add Slice to Store
+#### 3. Add Slice to Store
 ```javascript
 // In src/store/store.js
 
@@ -174,7 +379,7 @@ const store = configureStore({
 });
 ```
 
-### 4. Create Component
+#### 4. Create Component
 ```javascript
 // In src/components/your/YourComponent.jsx
 
@@ -206,7 +411,7 @@ const YourComponent = () => {
 export default YourComponent;
 ```
 
-### 5. Add Route
+#### 5. Add Route
 ```javascript
 // In src/App.jsx or your router configuration
 
@@ -216,9 +421,9 @@ import YourComponent from './components/your/YourComponent';
 <Route path="/your-path" element={<YourComponent />} />
 ```
 
-## Best Practices
+### Best Practices
 
-### Backend
+#### Backend
 1. Always use appropriate security annotations
 2. Validate input data
 3. Return consistent JSON responses
@@ -227,7 +432,7 @@ import YourComponent from './components/your/YourComponent';
 6. Handle errors gracefully
 7. Use soft delete where appropriate
 
-### Frontend
+#### Frontend
 1. Use the api instance for all HTTP requests
 2. Handle loading and error states
 3. Use Redux for state management
