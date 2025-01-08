@@ -12,9 +12,6 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  Avatar,
-  Menu,
-  MenuItem,
   useTheme,
   useMediaQuery,
   BottomNavigation,
@@ -24,13 +21,10 @@ import {
 import {
   Menu as MenuIcon,
   Event as EventIcon,
-  People as PeopleIcon,
-  TableChart as TableChartIcon,
   Settings as SettingsIcon,
-  AccountCircle as AccountCircleIcon,
-  Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { logout } from '../../store/slices/authSlice';
+import UserAvatar from './UserAvatar';
 
 const drawerWidth = 240;
 
@@ -40,27 +34,12 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth.user);
   const { id: weddingId } = useParams();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
-  };
-
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
   };
 
   const getMenuItems = () => {
@@ -157,38 +136,7 @@ const Layout = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Wedding Planner
           </Typography>
-          <IconButton
-            onClick={handleMenuOpen}
-            color="inherit"
-            sx={{
-              padding: 0.5,
-              border: '2px solid',
-              borderColor: 'primary.main',
-            }}
-          >
-            <Avatar sx={{ bgcolor: 'primary.main' }}>
-              {user?.firstName?.[0]?.toUpperCase() || 'U'}
-            </Avatar>
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            sx={{ mt: 1 }}
-          >
-            <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>
-              <ListItemIcon>
-                <AccountCircleIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="Profile" />
-            </MenuItem>
-            <MenuItem onClick={handleLogout}>
-              <ListItemIcon>
-                <LogoutIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="Logout" />
-            </MenuItem>
-          </Menu>
+          <UserAvatar />
         </Toolbar>
       </AppBar>
 

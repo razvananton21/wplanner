@@ -3,19 +3,153 @@
 ## Frontend-Backend Communication
 
 ### 1. Authentication Flow
+
+### Google OAuth Integration
+
+#### Flow Overview
+1. User clicks "Continue with Google" button
+2. Frontend fetches OAuth URL from backend
+3. OAuth popup opens with Google login
+4. User authorizes application
+5. Google redirects to callback page
+6. Callback page sends code to parent window
+7. Parent window exchanges code for tokens
+8. User data and tokens stored in Redux/localStorage
+
+#### Component Communication
 ```mermaid
-graph TD
-    A[LoginForm.jsx] -->|credentials| B[authService.js]
-    B -->|POST /api/login| C[AuthController.php]
-    C -->|validate| D[AuthService.php]
-    D -->|query| E[UserRepository.php]
-    E -->|user| D
-    D -->|generate| F[JWT Token]
-    F -->|token| C
-    C -->|response| B
-    B -->|dispatch| G[authSlice.js]
-    G -->|update| H[Redux Store]
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant G as Google
+
+    U->>F: Click Google Login
+    F->>B: GET /api/auth/google/url
+    B-->>F: Return OAuth URL
+    F->>G: Open OAuth Popup
+    G->>U: Show Login Form
+    U->>G: Authorize App
+    G->>F: Redirect with Code
+    F->>B: POST /api/auth/google/callback
+    B->>G: Verify Code
+    G-->>B: Return User Info
+    B-->>F: Return Tokens + User
+    F->>F: Store in Redux/localStorage
 ```
+
+### Token Management
+
+#### Token Flow
+1. Access token stored in localStorage
+2. Token added to API requests
+3. Token refresh on expiration
+4. Refresh token stored securely
+5. Automatic token refresh flow
+
+#### Token Refresh Flow
+```mermaid
+sequenceDiagram
+    participant F as Frontend
+    participant B as Backend
+    participant R as Redis
+
+    F->>B: API Request with Expired Token
+    B-->>F: 401 Unauthorized
+    F->>B: POST /api/auth/token/refresh
+    B->>R: Validate Refresh Token
+    R-->>B: Token Valid
+    B-->>F: New Access Token
+    F->>F: Update Stored Token
+```
+
+### User Avatar Handling
+
+#### Avatar Flow
+1. Avatar URL received from Google
+2. URL stored in user entity
+3. Avatar component displays image
+4. Fallback to initials if no avatar
+5. Real-time updates on profile changes
+
+#### Component Integration
+```javascript
+// Frontend Components
+const UserAvatar = () => {
+    const user = useSelector(state => state.auth.user);
+    return (
+        <Avatar
+            src={user.avatar}
+            fallback={getInitials(user)}
+        />
+    );
+};
+
+// Backend Response
+{
+    "user": {
+        "id": 1,
+        "email": "user@example.com",
+        "firstName": "John",
+        "lastName": "Doe",
+        "avatar": "https://lh3.googleusercontent.com/..."
+    }
+}
+```
+
+### Error Handling
+
+#### OAuth Errors
+1. Invalid client configuration
+2. User cancels authorization
+3. Token exchange failures
+4. Network connectivity issues
+5. Invalid callback handling
+
+#### Error Responses
+```javascript
+// Frontend Error Handling
+try {
+    await handleGoogleLogin(code);
+} catch (error) {
+    if (error.response?.status === 401) {
+        // Handle unauthorized
+    } else if (error.message === 'popup_closed') {
+        // Handle user cancelled
+    } else {
+        // Handle other errors
+    }
+}
+
+// Backend Error Responses
+{
+    "error": "invalid_grant",
+    "message": "Invalid authorization code"
+}
+```
+
+### Testing Considerations
+
+#### Frontend Tests
+1. OAuth button functionality
+2. Popup handling
+3. Token management
+4. Avatar display
+5. Error scenarios
+
+#### Backend Tests
+1. OAuth URL generation
+2. Token exchange
+3. User creation/update
+4. Token refresh
+5. Error handling
+
+#### Integration Tests
+1. Complete OAuth flow
+2. Token refresh flow
+3. Avatar updates
+4. Error scenarios
+5. Security validations
 
 ### 2. Wedding Management Flow
 ```mermaid

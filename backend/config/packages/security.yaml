@@ -33,6 +33,10 @@ security:
             pattern: ^/api/auth/register
             stateless: true
             security: false
+        oauth:
+            pattern: ^/api/auth/google
+            stateless: true
+            security: false
         rsvp:
             pattern: ^/api/rsvp
             stateless: true
@@ -52,6 +56,7 @@ security:
     access_control:
         - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/google, roles: PUBLIC_ACCESS }
         - { path: ^/api/rsvp, roles: PUBLIC_ACCESS }
         - { path: ^/api/uploads, roles: PUBLIC_ACCESS }
         - { path: ^/api/weddings/\d+/form-fields, roles: PUBLIC_ACCESS }

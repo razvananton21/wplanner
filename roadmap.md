@@ -35,11 +35,12 @@
   - Category breakdown
 
 ## Phase 1 - Core MVP [In Progress]
-1. **Enhanced Authentication** [⏳]
-   - Google OAuth integration
-   - Social login support
-   - Token refresh mechanism
-   - Session management improvements
+1. **Enhanced Authentication** [✓]
+   - Google OAuth integration ✓
+   - Social login support ✓
+   - Token refresh mechanism ✓
+   - Session management improvements ✓
+   - User avatar support ✓
 
 2. **Enhanced RSVP Features** [✓]
    - Plus-one management ✓

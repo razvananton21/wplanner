@@ -1063,6 +1063,157 @@ class ExpenseRepository extends ServiceEntityRepository
 }
 ```
 
+## Backend Architecture
+
+### Authentication System
+
+#### Services
+
+##### GoogleOAuthService
+```php
+// src/Service/GoogleOAuthService.php
+class GoogleOAuthService
+{
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private UserRepository $userRepository,
+        private TokenRefreshService $tokenRefreshService,
+        private string $googleClientId,
+        private string $googleClientSecret,
+        private string $googleCallbackUrl
+    ) {}
+
+    public function getAuthUrl(): string
+    {
+        // Generate Google OAuth URL
+    }
+
+    public function authenticateUser(string $code): array
+    {
+        // Process OAuth callback
+        // Verify tokens
+        // Create or update user
+        // Generate JWT tokens
+    }
+}
+```
+
+##### TokenRefreshService
+```php
+// src/Service/TokenRefreshService.php
+class TokenRefreshService
+{
+    public function generateTokens(User $user): array
+    {
+        // Generate access and refresh tokens
+    }
+
+    public function refreshToken(string $refreshToken): array
+    {
+        // Validate refresh token
+        // Generate new tokens
+    }
+}
+```
+
+#### Controllers
+
+##### AuthController
+```php
+// src/Controller/AuthController.php
+class AuthController extends AbstractController
+{
+    #[Route('/api/auth/google/url', name: 'google_auth_url', methods: ['GET'])]
+    public function getGoogleAuthUrl(): JsonResponse
+    {
+        // Return Google OAuth URL
+    }
+
+    #[Route('/api/auth/google/callback', name: 'google_auth_callback', methods: ['POST'])]
+    public function handleGoogleCallback(Request $request): JsonResponse
+    {
+        // Handle OAuth callback
+        // Return tokens and user data
+    }
+
+    #[Route('/api/auth/token/refresh', name: 'token_refresh', methods: ['POST'])]
+    public function refreshToken(Request $request): JsonResponse
+    {
+        // Handle token refresh
+    }
+}
+```
+
+#### Entity Updates
+
+##### User Entity
+```php
+// src/Entity/User.php
+class User
+{
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $googleId = null;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $avatar = null;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $refreshToken = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $tokenExpiresAt = null;
+}
+```
+
+### Configuration
+
+#### Services Configuration
+```yaml
+# config/services.yaml
+parameters:
+    google.client_id: '%env(GOOGLE_CLIENT_ID)%'
+    google.client_secret: '%env(GOOGLE_CLIENT_SECRET)%'
+    google.callback_url: '%env(GOOGLE_CALLBACK_URL)%'
+
+services:
+    App\Service\GoogleOAuthService:
+        arguments:
+            $googleClientId: '%google.client_id%'
+            $googleClientSecret: '%google.client_secret%'
+            $googleCallbackUrl: '%google.callback_url%'
+```
+
+#### Security Configuration
+```yaml
+# config/packages/security.yaml
+security:
+    firewalls:
+        main:
+            pattern: ^/api
+            stateless: true
+            jwt: ~
+            refresh_jwt: ~
+            oauth:
+                resource_owners:
+                    google: '/api/auth/google/callback'
+```
+
+### Database Migrations
+
+```php
+// migrations/Version*.php
+final class Version* extends AbstractMigration
+{
+    public function up(Schema $schema): void
+    {
+        $this->addSql('ALTER TABLE user ADD google_id VARCHAR(255) DEFAULT NULL');
+        $this->addSql('ALTER TABLE user ADD avatar VARCHAR(255) DEFAULT NULL');
+        $this->addSql('ALTER TABLE user ADD refresh_token VARCHAR(255) DEFAULT NULL');
+        $this->addSql('ALTER TABLE user ADD token_expires_at DATETIME DEFAULT NULL');
+    }
+}
+```
+
 This documentation provides:
 1. Detailed backend structure
 2. File relationships

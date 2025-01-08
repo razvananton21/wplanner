@@ -15,6 +15,56 @@
   }
   ```
 
+#### Google OAuth
+- **GET** `/api/auth/google/url`
+- Returns the Google OAuth URL for authentication
+- **Response**:
+  ```json
+  {
+    "url": "string"
+  }
+  ```
+
+- **POST** `/api/auth/google/callback`
+- Handles the Google OAuth callback
+- **Body**:
+  ```json
+  {
+    "code": "string"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "token": "string",
+    "refresh_token": "string",
+    "user": {
+      "id": "integer",
+      "email": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "avatar": "string"
+    }
+  }
+  ```
+
+#### Token Refresh
+- **POST** `/api/auth/token/refresh`
+- Refreshes an expired JWT token
+- **Body**:
+  ```json
+  {
+    "refresh_token": "string"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "token": "string",
+    "refresh_token": "string"
+  }
+  ```
+
 #### Logout
 - **POST** `/api/logout`
 - Logs out the current user
@@ -22,6 +72,17 @@
 #### Current User
 - **GET** `/api/me`
 - Returns information about the currently authenticated user
+- **Response**:
+  ```json
+  {
+    "id": "integer",
+    "email": "string",
+    "firstName": "string",
+    "lastName": "string",
+    "avatar": "string",
+    "roles": ["string"]
+  }
+  ```
 
 ### Admin
 

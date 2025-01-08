@@ -1179,3 +1179,114 @@ budget
    - Backend data integrity
    - API response validation
    - Error handling verification
+
+### Authentication System
+
+#### Core Features
+1. **JWT Authentication**
+   - 7-day token expiration
+   - Token refresh mechanism
+   - Secure token storage
+   - Bearer token authorization
+
+2. **Google OAuth Integration**
+   - OAuth2 flow implementation
+   - Google API Client integration
+   - Profile synchronization
+   - Avatar handling
+   - Token management
+   - Refresh token support
+
+3. **Frontend Components**
+   - Login form with Google button
+   - User avatar component
+   - Token refresh handling
+   - Authentication context
+   - Redux state management
+
+#### Implementation Details
+
+1. **Backend Services**
+   ```php
+   class GoogleOAuthService
+   {
+       private EntityManagerInterface $entityManager;
+       private UserRepository $userRepository;
+       private TokenRefreshService $tokenRefreshService;
+       private string $googleClientId;
+       private string $googleClientSecret;
+       private string $googleCallbackUrl;
+
+       public function getAuthUrl(): string;
+       public function authenticateUser(string $code): array;
+   }
+
+   class TokenRefreshService
+   {
+       public function generateTokens(User $user): array;
+       public function refreshToken(string $refreshToken): array;
+   }
+   ```
+
+2. **Frontend Services**
+   ```javascript
+   // oauthService.js
+   const oauthService = {
+       getGoogleAuthUrl: async () => {
+           const response = await api.get('/auth/google/url');
+           return response.data.url;
+       },
+       handleGoogleCallback: async (code) => {
+           const response = await api.post('/auth/google/callback', { code });
+           return response.data;
+       }
+   };
+
+   // Redux Auth Slice
+   const authSlice = {
+       reducers: {
+           login: (state, action) => {
+               state.user = action.payload.user;
+               state.token = action.payload.token;
+               state.isAuthenticated = true;
+           }
+       }
+   };
+   ```
+
+3. **Environment Configuration**
+   ```yaml
+   # services.yaml
+   parameters:
+       google.client_id: '%env(GOOGLE_CLIENT_ID)%'
+       google.client_secret: '%env(GOOGLE_CLIENT_SECRET)%'
+       google.callback_url: '%env(GOOGLE_CALLBACK_URL)%'
+   ```
+
+4. **Database Schema**
+   ```sql
+   ALTER TABLE user
+   ADD COLUMN google_id VARCHAR(255) DEFAULT NULL,
+   ADD COLUMN avatar VARCHAR(255) DEFAULT NULL,
+   ADD COLUMN refresh_token VARCHAR(255) DEFAULT NULL,
+   ADD COLUMN token_expires_at DATETIME DEFAULT NULL;
+   ```
+
+#### Security Considerations
+1. **Token Security**
+   - Secure token storage
+   - Token refresh mechanism
+   - Expiration handling
+   - HTTPS enforcement
+
+2. **OAuth Security**
+   - Client secret protection
+   - State parameter validation
+   - CORS configuration
+   - Secure callback handling
+
+3. **User Data**
+   - Profile data encryption
+   - Avatar URL validation
+   - Token scope limitations
+   - Session management

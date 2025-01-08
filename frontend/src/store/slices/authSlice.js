@@ -8,6 +8,7 @@ const initialState = {
   token: localStorage.getItem('token'),
   loading: false,
   error: null,
+  avatar: null,
 };
 
 export const initializeAuth = createAsyncThunk(
@@ -26,7 +27,13 @@ export const initializeAuth = createAsyncThunk(
       const response = await api.get('/auth/me');
       console.log('Initialize auth - User data:', response.data);
 
-      return { token, user: response.data };
+      return { 
+        token, 
+        user: {
+          ...response.data,
+          avatar: response.data.avatar
+        }
+      };
     } catch (error) {
       console.error('Initialize auth - Error:', error.response?.data || error.message);
       localStorage.removeItem('token');
@@ -39,8 +46,30 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      console.log('Login thunk - Sending request with credentials:', credentials);
-      const response = await api.post('/auth/login', credentials);
+      console.log('Login thunk - Checking credentials type:', credentials);
+      
+      let response;
+      
+      // If credentials contains a token, it's from OAuth
+      if (credentials.token) {
+        console.log('Login thunk - Using OAuth tokens');
+        response = { 
+          data: {
+            ...credentials,
+            user: {
+              email: credentials.email,
+              firstName: credentials.firstName,
+              lastName: credentials.lastName,
+              avatar: credentials.avatar
+            }
+          } 
+        };
+      } else {
+        // Regular login with email/password
+        console.log('Login thunk - Sending request with credentials:', credentials);
+        response = await api.post('/auth/login', credentials);
+      }
+      
       console.log('Login thunk - Response:', response.data);
 
       if (!response.data.token) {
@@ -50,9 +79,18 @@ export const login = createAsyncThunk(
 
       // Store token in localStorage
       localStorage.setItem('token', response.data.token);
+      if (response.data.refresh_token) {
+        localStorage.setItem('refreshToken', response.data.refresh_token);
+      }
       console.log('Login thunk - Token stored in localStorage:', response.data.token);
 
-      return response.data;
+      return {
+        ...response.data,
+        user: {
+          ...response.data.user,
+          avatar: response.data.user?.avatar
+        }
+      };
     } catch (error) {
       console.error('Login thunk - Error:', error.response?.data || error.message);
       return rejectWithValue(error.response?.data?.message || 'Login failed');

@@ -13,6 +13,9 @@ parameters:
     app.vendor_upload_directory: '%kernel.project_dir%/public/uploads/vendors'
     # Disable interactive mode for Symfony commands
     console.command.no_interaction: true
+    google.client_id: '%env(GOOGLE_CLIENT_ID)%'
+    google.client_secret: '%env(GOOGLE_CLIENT_SECRET)%'
+    google.callback_url: '%env(GOOGLE_CALLBACK_URL)%'
 
 services:
     # default configuration for services in *this* file
@@ -54,3 +57,9 @@ services:
     App\Controller\VendorController:
         arguments:
             $uploadDir: '%kernel.project_dir%/public/uploads'
+
+    App\Service\GoogleOAuthService:
+        arguments:
+            $googleClientId: '%google.client_id%'
+            $googleClientSecret: '%google.client_secret%'
+            $googleCallbackUrl: '%google.callback_url%'

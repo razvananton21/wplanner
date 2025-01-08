@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { login, clearError } from '../../store/slices/authSlice';
 import { motion } from 'framer-motion';
+import GoogleOAuthButton from '../../components/auth/GoogleOAuthButton';
 
 // Capacitor plugins
 import { App } from '@capacitor/app';
@@ -43,7 +44,8 @@ const Login = () => {
   
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
+  const { loading, error: reduxError, isAuthenticated } = useSelector((state) => state.auth);
+  const [loginError, setLoginError] = useState('');
 
   const {
     register,
@@ -77,6 +79,12 @@ const Login = () => {
 
     checkBiometric();
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (reduxError && reduxError !== 'No token found') {
+      setLoginError(reduxError);
+    }
+  }, [reduxError]);
 
   const handleBiometricAuth = async () => {
     try {
@@ -143,9 +151,9 @@ const Login = () => {
               Welcome Back
             </Typography>
 
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => dispatch(clearError())}>
-                {error}
+            {loginError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLoginError('')}>
+                {loginError}
               </Alert>
             )}
 
@@ -190,31 +198,35 @@ const Login = () => {
               >
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>
-
-              {biometricAvailable && (
-                <>
-                  <Divider sx={{ my: 2 }}>or</Divider>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<FingerprintIcon />}
-                    onClick={handleBiometricAuth}
-                  >
-                    Sign in with Biometrics
-                  </Button>
-                </>
-              )}
-
-              <Box sx={{ mt: 2, textAlign: 'center' }}>
-                <Button
-                  color="primary"
-                  onClick={() => navigate('/register')}
-                  sx={{ textTransform: 'none' }}
-                >
-                  Don't have an account? Sign Up
-                </Button>
-              </Box>
             </form>
+
+            <Divider sx={{ my: 2 }}>OR</Divider>
+
+            <GoogleOAuthButton />
+
+            {biometricAvailable && (
+              <>
+                <Divider sx={{ my: 2 }}>or</Divider>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<FingerprintIcon />}
+                  onClick={handleBiometricAuth}
+                >
+                  Sign in with Biometrics
+                </Button>
+              </>
+            )}
+
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Button
+                color="primary"
+                onClick={() => navigate('/register')}
+                sx={{ textTransform: 'none' }}
+              >
+                Don't have an account? Sign Up
+              </Button>
+            </Box>
           </Paper>
         </Box>
       </motion.div>

@@ -724,3 +724,127 @@ const VendorCard = ({ vendor, expenses }) => {
   );
 };
 ``` 
+
+## Frontend Architecture
+
+### Authentication Components
+
+#### Login Form
+- Email/password login
+- Google OAuth integration
+- Error handling
+- Loading states
+- Success redirects
+
+#### GoogleOAuthButton
+```javascript
+// components/auth/GoogleOAuthButton.jsx
+const GoogleOAuthButton = () => {
+    // Handles Google OAuth flow
+    // Opens popup for Google login
+    // Processes OAuth callback
+    // Manages token exchange
+};
+```
+
+#### UserAvatar
+```javascript
+// components/layout/UserAvatar.jsx
+const UserAvatar = () => {
+    // Displays user avatar from Google
+    // Falls back to initials if no avatar
+    // Includes dropdown menu
+    // Handles logout
+};
+```
+
+#### OAuthCallback
+```javascript
+// pages/auth/OAuthCallback.jsx
+const OAuthCallback = () => {
+    // Handles OAuth response
+    // Extracts authorization code
+    // Communicates with parent window
+    // Shows loading state
+};
+```
+
+### Authentication Services
+
+#### OAuth Service
+```javascript
+// services/oauthService.js
+const oauthService = {
+    getGoogleAuthUrl: async () => {
+        // Fetches Google OAuth URL
+    },
+    handleGoogleCallback: async (code) => {
+        // Processes OAuth callback
+        // Exchanges code for tokens
+    }
+};
+```
+
+### State Management
+
+#### Auth Slice
+```javascript
+// store/slices/authSlice.js
+const authSlice = createSlice({
+    name: 'auth',
+    initialState: {
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        loading: false,
+        error: null
+    },
+    reducers: {
+        // Auth state management
+        // Token handling
+        // User profile updates
+    }
+});
+```
+
+#### Auth Context
+```javascript
+// contexts/AuthContext.jsx
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+    // Manages auth state
+    // Syncs with Redux
+    // Handles login/logout
+    // Manages tokens
+};
+```
+
+### Integration Points
+
+#### API Configuration
+```javascript
+// services/api.js
+const api = axios.create({
+    baseURL: 'http://localhost:3000/api',
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
+// Token interceptor
+api.interceptors.request.use(config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+```
+
+#### Environment Variables
+```javascript
+// .env
+VITE_API_URL=http://localhost:3000/api
+VITE_GOOGLE_CLIENT_ID=your_client_id
+``` 

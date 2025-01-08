@@ -15,6 +15,8 @@ import WeddingList from './components/weddings/WeddingList';
 import CreateWedding from './components/weddings/CreateWedding';
 import WeddingDetails from './components/weddings/WeddingDetails';
 import RsvpPage from './components/rsvp/RsvpPage';
+import OAuthCallback from './pages/auth/OAuthCallback';
+import { AuthProvider } from './contexts/AuthContext';
 
 const App = () => {
   const navigate = useNavigate();
@@ -52,25 +54,28 @@ const App = () => {
   return (
     <>
       <CssBaseline />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/rsvp/:token" element={<RsvpPage />} />
+      <AuthProvider>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/rsvp/:token" element={<RsvpPage />} />
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
 
-        {/* Protected Routes */}
-        <Route element={<PrivateRoute />}>
-          <Route element={<Layout />}>
-            <Route path="/" element={<WeddingList />} />
-            <Route path="/weddings" element={<WeddingList />} />
-            <Route path="/weddings/new" element={<CreateWedding />} />
-            <Route path="/weddings/:id" element={<WeddingDetails />} />
+          {/* Protected Routes */}
+          <Route element={<PrivateRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/" element={<WeddingList />} />
+              <Route path="/weddings" element={<WeddingList />} />
+              <Route path="/weddings/new" element={<CreateWedding />} />
+              <Route path="/weddings/:id" element={<WeddingDetails />} />
+            </Route>
           </Route>
-        </Route>
 
-        {/* 404 Route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* 404 Route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
     </>
   );
 };

@@ -13,11 +13,74 @@ A comprehensive wedding planning application that helps couples manage their wed
   - Bearer token authorization
   - Query parameter token support
   - No cookie-based tokens
+  - Token refresh mechanism
+  - Refresh token support
+- Google OAuth Integration
+  - Google login button
+  - OAuth2 flow implementation
+  - User profile synchronization
+  - Avatar integration
+  - Token management
+  - Automatic profile updates
 - Role-based access control
 - Secure password handling
 - Protected routes in frontend
-- Token refresh mechanism
-- User entity with firstName and lastName separation
+- User entity with firstName, lastName, and avatar
+- Session management improvements
+- Real-time authentication state
+
+#### User Entity Structure [✓]
+```php
+class User
+{
+    private ?int $id = null;
+    private ?string $email = null;
+    private ?string $password = null;
+    private ?string $firstName = null;
+    private ?string $lastName = null;
+    private ?string $avatar = null;
+    private array $roles = [];
+    private ?string $googleId = null;
+    private ?string $refreshToken = null;
+    private ?\DateTimeImmutable $tokenExpiresAt = null;
+    private Collection $managedWeddings;
+    private Collection $invitations;
+    private ?Table $tableAssignment;
+    private ?array $preferences;
+    private \DateTimeImmutable $createdAt;
+    private \DateTimeImmutable $updatedAt;
+}
+```
+
+#### Frontend Components [✓]
+1. **Login Form**
+   - Email/password login
+   - Google OAuth button
+   - Error handling
+   - Loading states
+   - Success redirects
+
+2. **User Avatar**
+   - Displays user's Google avatar
+   - Fallback to initials
+   - Dropdown menu
+   - Logout option
+   - Styled border
+   - Responsive design
+
+3. **Authentication Context**
+   - User state management
+   - Login/logout methods
+   - Token handling
+   - Google OAuth integration
+   - Redux state synchronization
+
+4. **Token Management**
+   - Access token storage
+   - Refresh token handling
+   - Token expiration checks
+   - Automatic token refresh
+   - Secure storage in localStorage
 
 ### 2. Guest Management System [✓]
 
