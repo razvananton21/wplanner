@@ -30,6 +30,16 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    # Controllers configuration
+    App\Controller\:
+        resource: '../src/Controller'
+        tags: ['controller.service_arguments']
+
+    # Wedding resolver for controllers
+    App\Controller\TimelineEventController:
+        arguments:
+            $weddingRepository: '@App\Repository\WeddingRepository'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
     App\Service\GuestService:

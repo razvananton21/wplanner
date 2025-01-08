@@ -33,10 +33,13 @@ import {
   Email as EmailIcon,
   InsertDriveFile as FileIcon,
   Close as CloseIcon,
+  Event as EventIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import weddingService from '../../services/weddingService';
 import InvitationUpload from '../invitation/InvitationUpload';
+import Timeline from '../timeline/Timeline';
+import TableList from '../tables/TableList';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -126,8 +129,6 @@ const WeddingDetails = () => {
   const handleTabChange = (event, newValue) => {
     if (newValue === 'guests') {
       navigate(`/weddings/${id}/guests`);
-    } else if (newValue === 'tables') {
-      navigate(`/weddings/${id}/tables`);
     } else if (newValue === 'rsvp-form') {
       navigate(`/weddings/${id}/rsvp-form`);
     } else {
@@ -239,6 +240,12 @@ const WeddingDetails = () => {
                 label="Details"
                 value="details"
                 icon={<EditIcon />}
+                iconPosition="start"
+              />
+              <Tab
+                label="Timeline"
+                value="timeline"
+                icon={<EventIcon />}
                 iconPosition="start"
               />
               <Tab
@@ -408,6 +415,14 @@ const WeddingDetails = () => {
                   </Grid>
                 </Grid>
               </Grid>
+            )}
+
+            {activeTab === 'timeline' && (
+              <Timeline weddingId={wedding.id} />
+            )}
+
+            {activeTab === 'tables' && (
+              <TableList weddingId={wedding.id} />
             )}
 
             {activeTab === 'invitation' && (

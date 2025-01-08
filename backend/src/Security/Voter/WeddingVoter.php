@@ -12,7 +12,7 @@ class WeddingVoter extends Voter
 {
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return in_array($attribute, ['view', 'edit', 'delete', 'WEDDING_OWNER'])
+        return in_array(strtolower($attribute), ['view', 'edit', 'delete', 'wedding_owner'])
             && $subject instanceof Wedding;
     }
 
@@ -26,9 +26,9 @@ class WeddingVoter extends Voter
         /** @var Wedding $wedding */
         $wedding = $subject;
 
-        return match($attribute) {
+        return match(strtolower($attribute)) {
             'view' => $this->canView($wedding, $user),
-            'edit', 'delete', 'WEDDING_OWNER' => $this->canManage($wedding, $user),
+            'edit', 'delete', 'wedding_owner' => $this->canManage($wedding, $user),
             default => false,
         };
     }

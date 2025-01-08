@@ -6,6 +6,7 @@ use App\Repository\WeddingRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: WeddingRepository::class)]
 class Wedding
@@ -55,6 +56,10 @@ class Wedding
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $invitationPdfUrl = null;
 
+    #[ORM\OneToMany(mappedBy: 'wedding', targetEntity: TimelineEvent::class, orphanRemoval: true)]
+    #[Groups(['wedding:read'])]
+    private Collection $timelineEvents;
+
     public function __construct()
     {
         $this->tables = new ArrayCollection();
@@ -62,6 +67,7 @@ class Wedding
         $this->invitations = new ArrayCollection();
         $this->formFields = new ArrayCollection();
         $this->guests = new ArrayCollection();
+        $this->timelineEvents = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -304,6 +310,36 @@ class Wedding
     public function setInvitationPdfUrl(?string $invitationPdfUrl): static
     {
         $this->invitationPdfUrl = $invitationPdfUrl;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TimelineEvent>
+     */
+    public function getTimelineEvents(): Collection
+    {
+        return $this->timelineEvents;
+    }
+
+    public function addTimelineEvent(TimelineEvent $timelineEvent): static
+    {
+        if (!$this->timelineEvents->contains($timelineEvent)) {
+            $this->timelineEvents->add($timelineEvent);
+            $timelineEvent->setWedding($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTimelineEvent(TimelineEvent $timelineEvent): static
+    {
+        if ($this->timelineEvents->removeElement($timelineEvent)) {
+            // set the owning side to null (unless already changed)
+            if ($timelineEvent->getWedding() === $this) {
+                $timelineEvent->setWedding(null);
+            }
+        }
+
         return $this;
     }
 } 

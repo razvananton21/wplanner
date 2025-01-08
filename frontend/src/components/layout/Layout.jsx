@@ -69,15 +69,6 @@ const Layout = () => {
       { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
     ];
 
-    // Only show Tables menu item when we're in a wedding context
-    if (weddingId) {
-      items.splice(1, 0, {
-        text: 'Tables',
-        icon: <TableChartIcon />,
-        path: `/weddings/${weddingId}/tables`,
-      });
-    }
-
     return items;
   };
 

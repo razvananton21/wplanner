@@ -458,6 +458,7 @@ class Table
 - Available seats calculation ✓
 - Assignment validation ✓
 - Dietary restrictions consideration ✓
+- Timeline management ✓
 
 #### API Endpoints
 
@@ -479,14 +480,20 @@ class Table
    - DELETE `/api/weddings/{id}/guests/{guestId}` - Delete guest
    - POST `/api/weddings/{id}/guests/bulk` - Bulk create guests
 
-4. **Form Builder**
+4. **Timeline Management**
+   - GET `/api/weddings/{id}/timeline` - List timeline events
+   - POST `/api/weddings/{id}/timeline` - Create timeline event
+   - PUT `/api/weddings/{id}/timeline/{eventId}` - Update timeline event
+   - DELETE `/api/weddings/{id}/timeline/{eventId}` - Delete timeline event
+
+5. **Form Builder**
    - GET `/api/weddings/{id}/rsvp-form` - List form fields (excludes deleted fields)
    - POST `/api/weddings/{id}/rsvp-form` - Create form field
    - PUT `/api/weddings/{id}/rsvp-form/{fieldId}` - Update form field
    - DELETE `/api/weddings/{id}/rsvp-form/{fieldId}` - Soft delete form field
    - PUT `/api/weddings/{id}/rsvp-form/reorder` - Reorder form fields
 
-5. **RSVP System**
+6. **RSVP System**
    - GET `/api/rsvp/{token}/guest` - Get guest details and existing responses
      - Returns only active (non-deleted) form fields
      - Includes responses for deleted fields marked as obsolete
@@ -504,7 +511,7 @@ class Table
    - All responses are visible in the wedding management interface
    - Soft-deleted fields are marked as obsolete in responses
 
-6. **Notification System**
+7. **Notification System**
    - GET `/api/weddings/{id}/notifications` - List notifications
    - PUT `/api/notifications/{id}/read` - Mark notification as read
    - PUT `/api/weddings/{id}/notifications/read-all` - Mark all notifications as read

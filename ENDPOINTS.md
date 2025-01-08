@@ -203,6 +203,64 @@
   }
   ```
 
+### Timeline
+
+#### List Timeline Events
+- **GET** `/api/weddings/{weddingId}/timeline`
+- Returns list of timeline events for a wedding
+- **Required Permission**: `view` on wedding
+- **Response**:
+  ```json
+  {
+    "events": [
+      {
+        "id": "integer",
+        "title": "string",
+        "description": "string",
+        "startTime": "datetime",
+        "endTime": "datetime",
+        "type": "string",
+        "updatedAt": "datetime"
+      }
+    ]
+  }
+  ```
+
+#### Create Timeline Event
+- **POST** `/api/weddings/{weddingId}/timeline`
+- Creates a new timeline event for a wedding
+- **Required Permission**: `edit` on wedding
+- **Body**:
+  ```json
+  {
+    "title": "string",
+    "description": "string",
+    "startTime": "datetime",
+    "endTime": "datetime",
+    "type": "string"
+  }
+  ```
+
+#### Update Timeline Event
+- **PUT** `/api/weddings/{weddingId}/timeline/{id}`
+- Updates an existing timeline event
+- **Required Permission**: `edit` on wedding
+- **Body**:
+  ```json
+  {
+    "title": "string",
+    "description": "string",
+    "startTime": "datetime",
+    "endTime": "datetime",
+    "type": "string"
+  }
+  ```
+
+#### Delete Timeline Event
+- **DELETE** `/api/weddings/{weddingId}/timeline/{id}`
+- Deletes a timeline event
+- **Required Permission**: `edit` on wedding
+
 ## Part 2: Adding New Endpoints Guide
 
 ### Backend (Symfony)
