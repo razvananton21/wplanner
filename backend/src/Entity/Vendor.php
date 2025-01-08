@@ -84,9 +84,9 @@ class Vendor
     #[Groups(['vendor:read'])]
     private ?float $depositAmount = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column]
     #[Groups(['vendor:read'])]
-    private ?bool $depositPaid = null;
+    private bool $depositPaid = false;
 
     #[ORM\Column(nullable: true)]
     #[Groups(['vendor:read'])]
@@ -230,7 +230,7 @@ class Vendor
         return $this->price;
     }
 
-    public function setPrice(?float $price): static
+    public function setPrice(?float $price): self
     {
         $this->price = $price;
         return $this;
@@ -241,18 +241,18 @@ class Vendor
         return $this->depositAmount;
     }
 
-    public function setDepositAmount(?float $depositAmount): static
+    public function setDepositAmount(?float $depositAmount): self
     {
         $this->depositAmount = $depositAmount;
         return $this;
     }
 
-    public function isDepositPaid(): ?bool
+    public function isDepositPaid(): bool
     {
         return $this->depositPaid;
     }
 
-    public function setDepositPaid(?bool $depositPaid): static
+    public function setDepositPaid(bool $depositPaid): self
     {
         $this->depositPaid = $depositPaid;
         return $this;

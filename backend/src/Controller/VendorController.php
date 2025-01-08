@@ -16,16 +16,18 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use App\Service\VendorService;
 
 #[Route('/api/weddings/{weddingId}/vendors')]
 class VendorController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private WeddingRepository $weddingRepository,
-        private VendorRepository $vendorRepository,
-        private string $uploadDir,
-        private SluggerInterface $slugger
+        private readonly EntityManagerInterface $entityManager,
+        private readonly WeddingRepository $weddingRepository,
+        private readonly VendorRepository $vendorRepository,
+        private readonly VendorService $vendorService,
+        private readonly string $uploadDir,
+        private readonly SluggerInterface $slugger
     ) {}
 
     private function getWedding(int $weddingId): Wedding
@@ -57,24 +59,7 @@ class VendorController extends AbstractController
         $this->denyAccessUnlessGranted('edit', $wedding);
 
         $data = json_decode($request->getContent(), true);
-
-        $vendor = new Vendor();
-        $vendor->setWedding($wedding)
-            ->setName($data['name'])
-            ->setCompany($data['company'] ?? null)
-            ->setType($data['type'])
-            ->setPhone($data['phone'] ?? null)
-            ->setEmail($data['email'] ?? null)
-            ->setWebsite($data['website'] ?? null)
-            ->setAddress($data['address'] ?? null)
-            ->setNotes($data['notes'] ?? null)
-            ->setPrice($data['price'] ?? null)
-            ->setDepositAmount($data['depositAmount'] ?? null)
-            ->setDepositPaid($data['depositPaid'] ?? null)
-            ->setContractSigned($data['contractSigned'] ?? null);
-
-        $this->entityManager->persist($vendor);
-        $this->entityManager->flush();
+        $vendor = $this->vendorService->createVendor($wedding, $data);
 
         return $this->json([
             'vendor' => $vendor
@@ -117,49 +102,7 @@ class VendorController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-
-        if (isset($data['name'])) {
-            $vendor->setName($data['name']);
-        }
-        if (array_key_exists('company', $data)) {
-            $vendor->setCompany($data['company']);
-        }
-        if (isset($data['type'])) {
-            $vendor->setType($data['type']);
-        }
-        if (isset($data['status'])) {
-            $vendor->setStatus($data['status']);
-        }
-        if (array_key_exists('phone', $data)) {
-            $vendor->setPhone($data['phone']);
-        }
-        if (array_key_exists('email', $data)) {
-            $vendor->setEmail($data['email']);
-        }
-        if (array_key_exists('website', $data)) {
-            $vendor->setWebsite($data['website']);
-        }
-        if (array_key_exists('address', $data)) {
-            $vendor->setAddress($data['address']);
-        }
-        if (array_key_exists('notes', $data)) {
-            $vendor->setNotes($data['notes']);
-        }
-        if (array_key_exists('price', $data)) {
-            $vendor->setPrice($data['price']);
-        }
-        if (array_key_exists('depositAmount', $data)) {
-            $vendor->setDepositAmount($data['depositAmount']);
-        }
-        if (array_key_exists('depositPaid', $data)) {
-            $vendor->setDepositPaid($data['depositPaid']);
-        }
-        if (array_key_exists('contractSigned', $data)) {
-            $vendor->setContractSigned($data['contractSigned']);
-        }
-
-        $vendor->setUpdatedAt(new \DateTimeImmutable());
-        $this->entityManager->flush();
+        $vendor = $this->vendorService->updateVendor($vendor, $data);
 
         return $this->json([
             'vendor' => $vendor

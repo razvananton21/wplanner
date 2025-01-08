@@ -86,7 +86,21 @@ graph TD
     F -->|update| G[Redux Store]
 ```
 
-### 7. File Upload Flow
+### 7. Task Management Flow
+```mermaid
+graph TD
+    A[TaskList.jsx] -->|data| B[taskService.js]
+    B -->|GET/POST/PUT/DELETE| C[TaskController.php]
+    C -->|validate| D[TaskService.php]
+    D -->|save| E[TaskRepository.php]
+    E -->|task| D
+    D -->|result| C
+    C -->|response| B
+    B -->|dispatch| F[taskSlice.js]
+    F -->|update| G[Redux Store]
+```
+
+### 8. File Upload Flow
 ```mermaid
 graph TD
     A[VendorForm.jsx] -->|file| B[vendorService.js]
@@ -166,6 +180,95 @@ useEffect(() => {
 
 // Slice
 const updateData = createAction('slice/updateData');
+```
+
+### 4. Task Management Patterns
+```javascript
+// Task List with Filtering and Sorting
+const TaskList = () => {
+    const [filters, setFilters] = useState({
+        category: null,
+        status: null,
+        priority: null
+    });
+    
+    const tasks = useSelector(state => 
+        selectFilteredTasks(state.tasks.items, filters)
+    );
+
+    const handleDragEnd = async (result) => {
+        if (!result.destination) return;
+        
+        const newOrder = reorder(
+            tasks,
+            result.source.index,
+            result.destination.index
+        );
+        
+        await dispatch(reorderTasks(newOrder.map((task, index) => ({
+            id: task.id,
+            order: index
+        }))));
+    };
+
+    return (
+        <DragDropContext onDragEnd={handleDragEnd}>
+            <TaskFilters filters={filters} onChange={setFilters} />
+            <Droppable droppableId="tasks">
+                {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                        {tasks.map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                                {(provided) => (
+                                    <TaskItem
+                                        task={task}
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                    />
+                                )}
+                            </Draggable>
+                        ))}
+                        {provided.placeholder}
+                    </div>
+                )}
+            </Droppable>
+        </DragDropContext>
+    );
+};
+
+// Task Slice
+const taskSlice = createSlice({
+    name: 'tasks',
+    initialState: {
+        items: [],
+        loading: false,
+        error: null
+    },
+    reducers: {
+        reorderTasks: (state, action) => {
+            const newOrder = action.payload;
+            state.items = newOrder.map(order => ({
+                ...state.items.find(task => task.id === order.id),
+                displayOrder: order.order
+            }));
+        }
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchTasks.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchTasks.fulfilled, (state, action) => {
+                state.items = action.payload;
+                state.loading = false;
+            })
+            .addCase(fetchTasks.rejected, (state, action) => {
+                state.error = action.payload;
+                state.loading = false;
+            });
+    }
+});
 ```
 
 ## Error Handling Patterns
@@ -338,6 +441,282 @@ public function testValidation(): void
     $this->expectException(ValidationException::class);
     $service->process($invalidData);
 }
+```
+
+# Integration and Testing
+
+## Budget Management Integration
+
+### Frontend-Backend Integration
+
+#### Budget API Integration
+```javascript
+// Budget service configuration
+const budgetService = {
+  getBudget: async (weddingId) => {
+    return await api.get(`/weddings/${weddingId}/budget`);
+  },
+  createBudget: async (weddingId, data) => {
+    return await api.post(`/weddings/${weddingId}/budget`, data);
+  },
+  updateBudget: async (weddingId, data) => {
+    return await api.put(`/weddings/${weddingId}/budget`, data);
+  }
+};
+
+// Expense service configuration
+const expenseService = {
+  getExpenses: async (weddingId) => {
+    return await api.get(`/weddings/${weddingId}/expenses`);
+  },
+  createExpense: async (weddingId, data) => {
+    return await api.post(`/weddings/${weddingId}/expenses`, data);
+  },
+  updateExpense: async (weddingId, expenseId, data) => {
+    return await api.put(`/weddings/${weddingId}/expenses/${expenseId}`, data);
+  },
+  deleteExpense: async (weddingId, expenseId) => {
+    return await api.delete(`/weddings/${weddingId}/expenses/${expenseId}`);
+  }
+};
+```
+
+#### Vendor-Budget Integration
+```javascript
+// Vendor service with budget integration
+const vendorService = {
+  createVendor: async (weddingId, data) => {
+    const response = await api.post(`/weddings/${weddingId}/vendors`, data);
+    // Refresh budget data after vendor creation
+    await budgetService.getBudget(weddingId);
+    return response;
+  },
+  updateVendor: async (weddingId, vendorId, data) => {
+    const response = await api.put(`/weddings/${weddingId}/vendors/${vendorId}`, data);
+    // Refresh budget data after vendor update
+    await budgetService.getBudget(weddingId);
+    return response;
+  }
+};
+```
+
+### Testing
+
+#### Budget Component Tests
+```javascript
+describe('Budget Component', () => {
+  it('should display budget overview when budget exists', async () => {
+    const mockBudget = {
+      totalAmount: 50000,
+      categoryAllocations: {
+        venue: 20000,
+        catering: 15000,
+        photography: 10000,
+        other: 5000
+      }
+    };
+    
+    render(<Budget wedding={mockWedding} />);
+    
+    expect(screen.getByText('Budget Overview')).toBeInTheDocument();
+    expect(screen.getByText('$50,000')).toBeInTheDocument();
+  });
+
+  it('should handle empty budget state', async () => {
+    render(<Budget wedding={mockWedding} />);
+    
+    expect(screen.getByText('No budget set')).toBeInTheDocument();
+    expect(screen.getByText('Set Budget')).toBeInTheDocument();
+  });
+});
+```
+
+#### Expense Management Tests
+```javascript
+describe('Expense Management', () => {
+  it('should create new expense', async () => {
+    const mockExpense = {
+      category: 'venue',
+      description: 'Venue deposit',
+      amount: 5000,
+      status: 'paid'
+    };
+    
+    render(<ExpenseForm wedding={mockWedding} />);
+    
+    fireEvent.change(screen.getByLabelText('Category'), {
+      target: { value: 'venue' }
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '5000' }
+    });
+    
+    fireEvent.click(screen.getByText('Save'));
+    
+    await waitFor(() => {
+      expect(screen.getByText('Expense created successfully')).toBeInTheDocument();
+    });
+  });
+
+  it('should update expense status', async () => {
+    render(<ExpenseList wedding={mockWedding} />);
+    
+    fireEvent.click(screen.getByText('Mark as Paid'));
+    
+    await waitFor(() => {
+      expect(screen.getByText('Paid')).toBeInTheDocument();
+    });
+  });
+});
+```
+
+#### Vendor Integration Tests
+```javascript
+describe('Vendor Budget Integration', () => {
+  it('should create expenses when vendor is created', async () => {
+    const mockVendor = {
+      name: 'Test Vendor',
+      type: 'photographer',
+      price: 5000,
+      depositAmount: 1000,
+      depositPaid: true
+    };
+    
+    render(<VendorForm wedding={mockWedding} />);
+    
+    // Fill vendor form
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: mockVendor.name }
+    });
+    fireEvent.change(screen.getByLabelText('Price'), {
+      target: { value: mockVendor.price }
+    });
+    
+    fireEvent.click(screen.getByText('Save'));
+    
+    await waitFor(() => {
+      // Check if expenses were created
+      expect(screen.getByText('Deposit for Test Vendor')).toBeInTheDocument();
+      expect(screen.getByText('Remaining balance for Test Vendor')).toBeInTheDocument();
+    });
+  });
+});
+```
+
+### Error Handling
+
+#### Budget Error Handling
+```javascript
+// Budget slice error handling
+const budgetSlice = createSlice({
+  name: 'budget',
+  initialState,
+  reducers: {
+    setError: (state, action) => {
+      state.error = action.payload;
+      state.loading = false;
+    },
+    clearError: (state) => {
+      state.error = null;
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchBudget.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.loading = false;
+      })
+      .addCase(createExpense.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.loading = false;
+      });
+  }
+});
+```
+
+#### Expense Error Handling
+```javascript
+// Expense form error handling
+const ExpenseForm = ({ wedding }) => {
+  const [error, setError] = useState(null);
+  
+  const handleSubmit = async (data) => {
+    try {
+      await expenseService.createExpense(wedding.id, data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create expense');
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      {error && <Alert severity="error">{error}</Alert>}
+      {/* Form fields */}
+    </form>
+  );
+};
+```
+
+### Data Flow
+
+#### Budget Update Flow
+```javascript
+// Budget update process
+const updateBudgetFlow = async (weddingId, budgetData) => {
+  // 1. Update budget
+  await budgetService.updateBudget(weddingId, budgetData);
+  
+  // 2. Refresh budget data
+  const budgetResponse = await budgetService.getBudget(weddingId);
+  
+  // 3. Refresh expenses
+  const expensesResponse = await expenseService.getExpenses(weddingId);
+  
+  // 4. Update Redux store
+  dispatch(setBudget(budgetResponse.data));
+  dispatch(setExpenses(expensesResponse.data));
+};
+```
+
+#### Vendor-Budget Sync Flow
+```javascript
+// Vendor-Budget synchronization
+const syncVendorBudget = async (weddingId, vendorId) => {
+  // 1. Get vendor details
+  const vendorResponse = await vendorService.getVendor(weddingId, vendorId);
+  const vendor = vendorResponse.data;
+  
+  // 2. Update or create vendor expenses
+  if (vendor.price) {
+    // Handle deposit
+    if (vendor.depositAmount) {
+      await expenseService.createExpense(weddingId, {
+        category: vendor.type,
+        description: `Deposit for ${vendor.name}`,
+        amount: vendor.depositAmount,
+        status: vendor.depositPaid ? 'paid' : 'pending',
+        isVendorExpense: true,
+        vendor: vendor.id
+      });
+    }
+    
+    // Handle remaining balance
+    const remainingBalance = vendor.price - (vendor.depositAmount || 0);
+    if (remainingBalance > 0) {
+      await expenseService.createExpense(weddingId, {
+        category: vendor.type,
+        description: `Remaining balance for ${vendor.name}`,
+        amount: remainingBalance,
+        status: 'pending',
+        isVendorExpense: true,
+        vendor: vendor.id
+      });
+    }
+  }
+  
+  // 3. Refresh budget data
+  await updateBudgetFlow(weddingId);
+};
 ```
 
 This documentation provides:

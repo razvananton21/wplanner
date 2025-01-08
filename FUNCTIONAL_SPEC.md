@@ -237,9 +237,82 @@ class Guest
 - Guest management integration ✓
 - RSVP form customization ✓
 - Vendor management ✓
+- Task checklist ✓
 - Budget tracking ⏳
-- Task checklist ⏳
 - Photo gallery ⏳
+
+### 6. Task Management [✓]
+
+#### Task Entity Structure [✓]
+```php
+class Task
+{
+    private ?int $id = null;
+    private ?string $title = null;
+    private ?string $description = null;
+    private ?string $category = null;
+    private ?string $status = null;
+    private int $priority = 2;
+    private bool $isCompleted = false;
+    private ?\DateTimeImmutable $dueDate = null;
+    private ?string $notes = null;
+    private int $displayOrder = 0;
+    private ?Wedding $wedding = null;
+    private ?\DateTimeImmutable $createdAt = null;
+    private ?\DateTimeImmutable $updatedAt = null;
+}
+```
+
+#### Features [✓]
+- Create and manage tasks ✓
+  - Task title and description ✓
+  - Category assignment ✓
+  - Priority levels ✓
+  - Due date tracking ✓
+  - Status management ✓
+  - Notes and comments ✓
+  - Display order customization ✓
+- Task organization ✓
+  - Category-based grouping ✓
+  - Priority-based sorting ✓
+  - Due date filtering ✓
+  - Status filtering ✓
+  - Drag-and-drop reordering ✓
+- Progress tracking ✓
+  - Completion status ✓
+  - Overdue task highlighting ✓
+  - Upcoming task alerts ✓
+  - Category progress ✓
+- Integration points ✓
+  - Wedding association ✓
+  - Timeline sync ✓
+  - Vendor linkage ✓
+  - Dashboard widgets ✓
+
+#### Task Categories [✓]
+- Pre-Wedding Planning
+- Ceremony
+- Reception
+- Vendors
+- Attire
+- Beauty
+- Decor
+- Music
+- Photography
+- Transportation
+- Other
+
+#### Status Options [✓]
+- Pending
+- In Progress
+- Completed
+- Delayed
+- Cancelled
+
+#### Priority Levels [✓]
+- High (1)
+- Medium (2)
+- Low (3)
 
 ### 6. Vendor Management [✓]
 
@@ -363,6 +436,105 @@ class Vendor
 - Email template support
 - HTML email support
 - Future: Custom email templates
+
+### 7. Budget Management [✓]
+
+#### Budget Entity Structure [✓]
+```php
+class Budget
+{
+    private ?int $id = null;
+    private ?Wedding $wedding = null;
+    private float $totalAmount = 0.0;
+    private array $categoryAllocations = [];
+    private Collection $expenses;
+    private ?\DateTimeImmutable $createdAt = null;
+    private ?\DateTimeImmutable $updatedAt = null;
+}
+```
+
+#### Expense Entity Structure [✓]
+```php
+class Expense
+{
+    private ?int $id = null;
+    private ?Budget $budget = null;
+    private ?Vendor $vendor = null;
+    private ?string $category = null;
+    private ?string $description = null;
+    private float $amount = 0.0;
+    private string $type = 'other'; // vendor_total, vendor_deposit, other
+    private string $status = 'pending'; // paid, pending, partial
+    private ?float $paidAmount = null;
+    private ?\DateTimeImmutable $dueDate = null;
+    private ?\DateTimeImmutable $paidAt = null;
+    private bool $isVendorExpense = false;
+    private ?\DateTimeImmutable $createdAt = null;
+    private ?\DateTimeImmutable $updatedAt = null;
+}
+```
+
+#### Features [✓]
+- Budget Setup and Management ✓
+  - Total budget amount setting ✓
+  - Category allocations ✓
+  - Budget overview with totals ✓
+  - Remaining budget calculation ✓
+  - Category-wise breakdown ✓
+
+- Expense Tracking ✓
+  - Manual expense creation ✓
+  - Expense categorization ✓
+  - Payment status tracking ✓
+  - Due date management ✓
+  - Partial payments support ✓
+
+- Vendor Integration ✓
+  - Automatic expense creation from vendors ✓
+  - Deposit tracking ✓
+  - Remaining balance tracking ✓
+  - Payment status sync ✓
+  - Vendor expense updates ✓
+
+- Financial Overview ✓
+  - Total budget display ✓
+  - Total spent calculation ✓
+  - Total paid tracking ✓
+  - Pending payments summary ✓
+  - Category-wise spending ✓
+  - Budget utilization visualization ✓
+
+#### Expense Types [✓]
+- Vendor Total
+- Vendor Deposit
+- Other
+
+#### Payment Status [✓]
+- Paid
+- Pending
+- Partial
+
+#### User Interface [✓]
+- Budget Overview Section ✓
+  - Total budget display ✓
+  - Spending summary ✓
+  - Category breakdown ✓
+  - Progress visualization ✓
+  - Collapsible sections ✓
+
+- Expense Management Section ✓
+  - Expense list with filters ✓
+  - Add/Edit expense forms ✓
+  - Payment status indicators ✓
+  - Due date tracking ✓
+  - Action menus ✓
+
+#### Data Management [✓]
+- Automatic timestamps ✓
+- Payment history tracking ✓
+- Vendor expense synchronization ✓
+- Category totals calculation ✓
+- Budget summary generation ✓
 
 ## Technical Architecture
 - Frontend: React with Material-UI

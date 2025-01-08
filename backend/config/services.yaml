@@ -46,3 +46,11 @@ services:
     App\Service\GuestService:
         arguments:
             $appUrl: '%app_url%'
+
+    App\Service\FileService:
+        arguments:
+            $uploadDir: '%kernel.project_dir%/public/uploads'
+
+    App\Controller\VendorController:
+        arguments:
+            $uploadDir: '%kernel.project_dir%/public/uploads'

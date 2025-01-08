@@ -91,6 +91,24 @@
   - WeddingRepository
 - Used by: Frontend vendor services
 
+#### Task Management (`TaskController.php`)
+- Purpose: Task CRUD and management operations
+- Endpoints:
+  ```php
+  #[Route('/api/weddings/{id}/tasks', methods: ['GET', 'POST'])]
+  #[Route('/api/weddings/{id}/tasks/incomplete', methods: ['GET'])]
+  #[Route('/api/weddings/{id}/tasks/category/{category}', methods: ['GET'])]
+  #[Route('/api/weddings/{id}/tasks/overdue', methods: ['GET'])]
+  #[Route('/api/weddings/{id}/tasks/upcoming', methods: ['GET'])]
+  #[Route('/api/weddings/{id}/tasks/{taskId}', methods: ['GET', 'PUT', 'DELETE'])]
+  #[Route('/api/weddings/{id}/tasks/reorder', methods: ['PUT'])]
+  ```
+- Dependencies:
+  - TaskService
+  - TaskRepository
+  - WeddingRepository
+- Used by: Frontend task services
+
 ### 2. Entities (`src/Entity/`)
 
 #### User Entity (`User.php`)
@@ -232,6 +250,30 @@
   - VendorController
   - FileService
 
+#### Task Entity (`Task.php`)
+- Properties:
+  ```php
+  private ?int $id;
+  private ?string $title;
+  private ?string $description;
+  private ?string $category;
+  private ?string $status;
+  private int $priority;
+  private bool $isCompleted;
+  private ?\DateTimeImmutable $dueDate;
+  private ?string $notes;
+  private int $displayOrder;
+  private ?Wedding $wedding;
+  private ?\DateTimeImmutable $createdAt;
+  private ?\DateTimeImmutable $updatedAt;
+  ```
+- Relationships:
+  - ManyToOne: wedding
+- Used by:
+  - TaskController
+  - TaskRepository
+  - TaskService
+
 ### 3. Repositories (`src/Repository/`)
 
 #### User Repository (`UserRepository.php`)
@@ -302,6 +344,21 @@
 - Used by:
   - VendorController
   - FileService
+
+#### Task Repository (`TaskRepository.php`)
+- Methods:
+  ```php
+  public function findByWedding(Wedding $wedding): array
+  public function findIncompleteByWedding(Wedding $wedding): array
+  public function findByWeddingAndCategory(Wedding $wedding, string $category): array
+  public function findOverdueTasks(Wedding $wedding): array
+  public function findUpcomingTasks(Wedding $wedding, int $days): array
+  public function save(Task $task, bool $flush = false): void
+  public function remove(Task $task, bool $flush = false): void
+  ```
+- Used by:
+  - TaskController
+  - TaskService
 
 ### 4. Services (`src/Service/`)
 
@@ -376,6 +433,19 @@
   - FileService
 - Used by:
   - VendorController
+
+#### Task Service (`TaskService.php`)
+- Methods:
+  ```php
+  public function getTask(int $id): ?Task
+  public function update(Task $task, array $data): Task
+  public function delete(Task $task): void
+  ```
+- Dependencies:
+  - TaskRepository
+  - ValidatorInterface
+- Used by:
+  - TaskController
 
 ### 5. Security (`src/Security/`)
 
@@ -514,6 +584,484 @@ CREATE TABLE rsvp_response (
    // Table.php
    // Add validation rules
    ```
+
+## Budget Management
+
+### Entities
+
+#### Budget Entity
+```php
+#[ORM\Entity(repositoryClass: BudgetRepository::class)]
+class Budget
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\OneToOne(inversedBy: 'budget')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Wedding $wedding = null;
+
+    #[ORM\Column]
+    private float $totalAmount = 0.0;
+
+    #[ORM\Column(type: Types::JSON)]
+    private array $categoryAllocations = [];
+
+    #[ORM\OneToMany(mappedBy: 'budget', targetEntity: Expense::class, orphanRemoval: true)]
+    private Collection $expenses;
+
+    #[ORM\Column]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column]
+    private ?\DateTimeImmutable $updatedAt = null;
+}
+```
+
+#### Expense Entity
+```php
+#[ORM\Entity(repositoryClass: ExpenseRepository::class)]
+class Expense
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\ManyToOne(inversedBy: 'expenses')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Budget $budget = null;
+
+    #[ORM\ManyToOne]
+    private ?Vendor $vendor = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $category = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $description = null;
+
+    #[ORM\Column]
+    private float $amount = 0.0;
+
+    #[ORM\Column(length: 255)]
+    private string $type = 'other';
+
+    #[ORM\Column(length: 255)]
+    private string $status = 'pending';
+
+    #[ORM\Column(nullable: true)]
+    private ?float $paidAmount = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $dueDate = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $paidAt = null;
+
+    #[ORM\Column]
+    private bool $isVendorExpense = false;
+}
+```
+
+### Services
+
+#### Budget Service
+```php
+class BudgetService
+{
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private ExpenseService $expenseService
+    ) {}
+
+    public function getBudget(Wedding $wedding): ?Budget
+    {
+        return $this->entityManager->getRepository(Budget::class)
+            ->findOneBy(['wedding' => $wedding]);
+    }
+
+    public function createBudget(Wedding $wedding, float $totalAmount, array $categoryAllocations): Budget
+    {
+        $budget = new Budget();
+        $budget->setWedding($wedding);
+        $budget->setTotalAmount($totalAmount);
+        $budget->setCategoryAllocations($categoryAllocations);
+        
+        $this->entityManager->persist($budget);
+        $this->entityManager->flush();
+        
+        return $budget;
+    }
+
+    public function createExpenseFromVendor(Vendor $vendor): void
+    {
+        $wedding = $vendor->getWedding();
+        $budget = $this->getBudget($wedding);
+        
+        if (!$budget || !$vendor->getPrice()) {
+            return;
+        }
+
+        // Create deposit expense if applicable
+        if ($vendor->getDepositAmount()) {
+            $this->expenseService->createExpense(
+                $budget,
+                $vendor,
+                'Deposit for ' . $vendor->getName(),
+                $vendor->getDepositAmount(),
+                'vendor_deposit',
+                $vendor->isDepositPaid() ? 'paid' : 'pending'
+            );
+        }
+
+        // Create remaining balance expense
+        $remainingAmount = $vendor->getPrice() - ($vendor->getDepositAmount() ?? 0);
+        if ($remainingAmount > 0) {
+            $this->expenseService->createExpense(
+                $budget,
+                $vendor,
+                'Remaining balance for ' . $vendor->getName(),
+                $remainingAmount,
+                'vendor_total',
+                'pending'
+            );
+        }
+    }
+}
+```
+
+#### Expense Service
+```php
+class ExpenseService
+{
+    public function __construct(
+        private EntityManagerInterface $entityManager
+    ) {}
+
+    public function createExpense(
+        Budget $budget,
+        ?Vendor $vendor,
+        string $description,
+        float $amount,
+        string $type = 'other',
+        string $status = 'pending'
+    ): Expense {
+        $expense = new Expense();
+        $expense->setBudget($budget);
+        $expense->setVendor($vendor);
+        $expense->setDescription($description);
+        $expense->setAmount($amount);
+        $expense->setType($type);
+        $expense->setStatus($status);
+        $expense->setIsVendorExpense($vendor !== null);
+        
+        if ($status === 'paid') {
+            $expense->setPaidAmount($amount);
+            $expense->setPaidAt(new \DateTimeImmutable());
+        }
+        
+        $this->entityManager->persist($expense);
+        $this->entityManager->flush();
+        
+        return $expense;
+    }
+
+    public function updateExpenseStatus(Expense $expense, string $status, ?float $paidAmount = null): void
+    {
+        $expense->setStatus($status);
+        
+        if ($status === 'paid') {
+            $expense->setPaidAmount($expense->getAmount());
+            $expense->setPaidAt(new \DateTimeImmutable());
+        } elseif ($status === 'partial' && $paidAmount !== null) {
+            $expense->setPaidAmount($paidAmount);
+            $expense->setPaidAt(new \DateTimeImmutable());
+        }
+        
+        $this->entityManager->flush();
+    }
+}
+```
+
+### Controllers
+
+#### Budget Controller
+```php
+class BudgetController extends AbstractController
+{
+    #[Route('/api/weddings/{id}/budget', name: 'get_wedding_budget', methods: ['GET'])]
+    #[IsGranted('view', 'wedding')]
+    public function getBudget(Wedding $wedding): JsonResponse
+    {
+        $budget = $this->budgetService->getBudget($wedding);
+        
+        if (!$budget) {
+            return $this->json([
+                'budget' => null,
+                'summary' => [
+                    'totalBudget' => 0,
+                    'totalSpent' => 0,
+                    'totalPaid' => 0,
+                    'totalPending' => 0,
+                    'remainingBudget' => 0,
+                    'categoryAllocations' => [],
+                    'spentByCategory' => [],
+                    'pendingByCategory' => []
+                ]
+            ]);
+        }
+
+        return $this->json([
+            'budget' => $budget,
+            'summary' => $this->budgetService->getBudgetSummary($budget)
+        ]);
+    }
+
+    #[Route('/api/weddings/{id}/expenses', name: 'get_wedding_expenses', methods: ['GET'])]
+    #[IsGranted('view', 'wedding')]
+    public function getExpenses(Wedding $wedding): JsonResponse
+    {
+        $budget = $this->budgetService->getBudget($wedding);
+        
+        return $this->json([
+            'expenses' => $budget ? $budget->getExpenses() : [],
+            'budget' => $budget,
+            'summary' => $budget ? $this->budgetService->getBudgetSummary($budget) : null
+        ]);
+    }
+}
+```
+
+### Security
+
+#### Budget Voter
+```php
+class BudgetVoter extends Voter
+{
+    protected function supports(string $attribute, mixed $subject): bool
+    {
+        return in_array($attribute, ['view', 'edit'])
+            && $subject instanceof Budget;
+    }
+
+    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
+    {
+        $user = $token->getUser();
+        if (!$user instanceof User) {
+            return false;
+        }
+
+        $wedding = $subject->getWedding();
+
+        return match($attribute) {
+            'view' => $this->canView($wedding, $user),
+            'edit' => $this->canEdit($wedding, $user),
+            default => false,
+        };
+    }
+}
+```
+
+### Vendor-Budget Integration
+
+#### Database Schema
+```sql
+CREATE TABLE vendor (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    wedding_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    company VARCHAR(255),
+    type VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'contacted',
+    price DECIMAL(10,2),
+    deposit_amount DECIMAL(10,2),
+    deposit_paid BOOLEAN DEFAULT FALSE,
+    contract_signed BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (wedding_id) REFERENCES wedding(id)
+);
+
+CREATE TABLE expense (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    budget_id INT NOT NULL,
+    vendor_id INT,
+    category VARCHAR(50),
+    description TEXT,
+    amount DECIMAL(10,2) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    paid_amount DECIMAL(10,2),
+    due_date DATETIME,
+    paid_at DATETIME,
+    is_vendor_expense BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (budget_id) REFERENCES budget(id),
+    FOREIGN KEY (vendor_id) REFERENCES vendor(id)
+);
+```
+
+#### VendorService with Budget Integration
+```php
+class VendorService
+{
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private BudgetService $budgetService,
+        private FileService $fileService
+    ) {}
+
+    public function createVendor(Wedding $wedding, array $data): Vendor
+    {
+        $vendor = new Vendor();
+        $vendor->setWedding($wedding);
+        $vendor->setName($data['name']);
+        $vendor->setCompany($data['company'] ?? null);
+        $vendor->setType($data['type']);
+        $vendor->setPrice($data['price'] ?? null);
+        $vendor->setDepositAmount($data['depositAmount'] ?? null);
+        $vendor->setDepositPaid($data['depositPaid'] ?? false);
+        
+        $this->entityManager->persist($vendor);
+        $this->entityManager->flush();
+        
+        // Create vendor expenses in budget if price is set
+        if ($vendor->getPrice()) {
+            $this->budgetService->createExpenseFromVendor($vendor);
+        }
+        
+        return $vendor;
+    }
+
+    public function updateVendor(Vendor $vendor, array $data): Vendor
+    {
+        $oldPrice = $vendor->getPrice();
+        $oldDeposit = $vendor->getDepositAmount();
+        $oldDepositPaid = $vendor->isDepositPaid();
+        
+        // Update vendor data
+        $vendor->setName($data['name']);
+        $vendor->setCompany($data['company'] ?? null);
+        $vendor->setType($data['type']);
+        $vendor->setPrice($data['price'] ?? null);
+        $vendor->setDepositAmount($data['depositAmount'] ?? null);
+        $vendor->setDepositPaid($data['depositPaid'] ?? false);
+        
+        $this->entityManager->flush();
+        
+        // Sync expenses if financial details changed
+        if ($oldPrice !== $vendor->getPrice() ||
+            $oldDeposit !== $vendor->getDepositAmount() ||
+            $oldDepositPaid !== $vendor->isDepositPaid()) {
+            $this->budgetService->syncVendorExpenses($vendor);
+        }
+        
+        return $vendor;
+    }
+}
+```
+
+#### BudgetService with Vendor Integration
+```php
+class BudgetService
+{
+    public function syncVendorExpenses(Vendor $vendor): void
+    {
+        $budget = $this->getBudget($vendor->getWedding());
+        if (!$budget) {
+            return;
+        }
+
+        // Remove existing vendor expenses
+        $existingExpenses = $this->expenseRepository->findBy([
+            'vendor' => $vendor,
+            'budget' => $budget
+        ]);
+        foreach ($existingExpenses as $expense) {
+            $this->entityManager->remove($expense);
+        }
+        
+        // Create new expenses based on current vendor data
+        $this->createExpenseFromVendor($vendor);
+        
+        $this->entityManager->flush();
+    }
+
+    public function createExpenseFromVendor(Vendor $vendor): void
+    {
+        $budget = $this->getBudget($vendor->getWedding());
+        if (!$budget || !$vendor->getPrice()) {
+            return;
+        }
+
+        // Create deposit expense if applicable
+        if ($vendor->getDepositAmount()) {
+            $depositExpense = new Expense();
+            $depositExpense->setBudget($budget);
+            $depositExpense->setVendor($vendor);
+            $depositExpense->setCategory($vendor->getType());
+            $depositExpense->setDescription('Deposit for ' . $vendor->getName());
+            $depositExpense->setAmount($vendor->getDepositAmount());
+            $depositExpense->setType('vendor_deposit');
+            $depositExpense->setStatus($vendor->isDepositPaid() ? 'paid' : 'pending');
+            $depositExpense->setIsVendorExpense(true);
+            
+            if ($vendor->isDepositPaid()) {
+                $depositExpense->setPaidAmount($vendor->getDepositAmount());
+                $depositExpense->setPaidAt(new \DateTimeImmutable());
+            }
+            
+            $this->entityManager->persist($depositExpense);
+        }
+
+        // Create remaining balance expense
+        $remainingAmount = $vendor->getPrice() - ($vendor->getDepositAmount() ?? 0);
+        if ($remainingAmount > 0) {
+            $balanceExpense = new Expense();
+            $balanceExpense->setBudget($budget);
+            $balanceExpense->setVendor($vendor);
+            $balanceExpense->setCategory($vendor->getType());
+            $balanceExpense->setDescription('Remaining balance for ' . $vendor->getName());
+            $balanceExpense->setAmount($remainingAmount);
+            $balanceExpense->setType('vendor_total');
+            $balanceExpense->setStatus('pending');
+            $balanceExpense->setIsVendorExpense(true);
+            
+            $this->entityManager->persist($balanceExpense);
+        }
+        
+        $this->entityManager->flush();
+    }
+}
+```
+
+#### ExpenseRepository with Vendor Queries
+```php
+class ExpenseRepository extends ServiceEntityRepository
+{
+    public function findVendorExpenses(Vendor $vendor): array
+    {
+        return $this->createQueryBuilder('e')
+            ->andWhere('e.vendor = :vendor')
+            ->andWhere('e.isVendorExpense = true')
+            ->setParameter('vendor', $vendor)
+            ->orderBy('e.type', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findExpensesByCategory(Budget $budget): array
+    {
+        return $this->createQueryBuilder('e')
+            ->select('e.category', 'SUM(e.amount) as total', 'SUM(e.paidAmount) as paid')
+            ->andWhere('e.budget = :budget')
+            ->setParameter('budget', $budget)
+            ->groupBy('e.category')
+            ->getQuery()
+            ->getResult();
+    }
+}
+```
 
 This documentation provides:
 1. Detailed backend structure

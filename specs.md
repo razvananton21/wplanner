@@ -782,3 +782,400 @@ class Table
    - MIME type detection ✓
    - File size tracking ✓
    - Safe file deletion ✓
+
+### Budget Management
+
+#### Core Features
+1. **Budget Setup**
+   - Total budget amount setting
+   - Category allocations
+   - Budget overview with totals
+   - Remaining budget calculation
+   - Category-wise breakdown
+
+2. **Expense Tracking**
+   - Manual expense creation
+   - Expense categorization
+   - Payment status tracking
+   - Due date management
+   - Partial payments support
+
+3. **Vendor Integration**
+   - Automatic expense creation from vendors
+   - Deposit tracking
+   - Remaining balance tracking
+   - Payment status sync
+   - Vendor expense updates
+
+4. **Financial Overview**
+   - Total budget display
+   - Total spent calculation
+   - Total paid tracking
+   - Pending payments summary
+   - Category-wise spending
+   - Budget utilization visualization
+
+#### Entity Structure
+
+1. **Budget Entity**
+   ```php
+   class Budget
+   {
+       private ?int $id = null;
+       private ?Wedding $wedding = null;
+       private float $totalAmount = 0.0;
+       private array $categoryAllocations = [];
+       private Collection $expenses;
+       private ?\DateTimeImmutable $createdAt = null;
+       private ?\DateTimeImmutable $updatedAt = null;
+   }
+   ```
+
+2. **Expense Entity**
+   ```php
+   class Expense
+   {
+       private ?int $id = null;
+       private ?Budget $budget = null;
+       private ?Vendor $vendor = null;
+       private ?string $category = null;
+       private ?string $description = null;
+       private float $amount = 0.0;
+       private string $type = 'other';
+       private string $status = 'pending';
+       private ?float $paidAmount = null;
+       private ?\DateTimeImmutable $dueDate = null;
+       private ?\DateTimeImmutable $paidAt = null;
+       private bool $isVendorExpense = false;
+   }
+   ```
+
+#### Frontend Components
+
+1. **Budget Overview**
+   - Total budget display
+   - Spending summary
+   - Progress visualization
+   - Category allocation display
+   - Collapsible sections
+
+2. **Expense Management**
+   - List of all expenses
+   - Filtering and sorting
+   - Payment status tracking
+   - Due date management
+   - Vendor expense integration
+
+3. **Vendor Integration**
+   - Price display in vendor list
+   - Deposit tracking
+   - Payment status
+   - Automatic expense creation
+   - Budget synchronization
+
+#### API Endpoints
+
+1. **Budget Management**
+   - GET `/api/weddings/{id}/budget` - Get budget details
+   - POST `/api/weddings/{id}/budget` - Create budget
+   - PUT `/api/weddings/{id}/budget` - Update budget
+   - GET `/api/weddings/{id}/budget/summary` - Get budget summary
+
+2. **Expense Management**
+   - GET `/api/weddings/{id}/expenses` - List expenses
+   - POST `/api/weddings/{id}/expenses` - Create expense
+   - PUT `/api/weddings/{id}/expenses/{id}` - Update expense
+   - DELETE `/api/weddings/{id}/expenses/{id}` - Delete expense
+
+#### Security
+
+1. **Access Control**
+   - View permission for budget viewing
+   - Edit permission for budget modifications
+   - Wedding-based access control
+   - Vendor expense protection
+
+2. **Data Validation**
+   - Amount validation
+   - Category validation
+   - Payment status validation
+   - Date validation
+
+#### Integration Points
+
+1. **Vendor Integration**
+   - Automatic expense creation
+   - Deposit handling
+   - Payment status sync
+   - Budget updates
+
+2. **Frontend-Backend**
+   - Real-time updates
+   - Error handling
+   - Loading states
+   - Data validation
+
+### Vendor Management
+
+#### Core Features
+1. **Vendor Information**
+   - Basic details (name, company)
+   - Contact information
+   - Service categorization
+   - Status tracking
+   - Financial details
+
+2. **File Management**
+   - File upload support
+   - Multiple file types
+   - Secure storage
+   - Access control
+
+3. **Financial Tracking**
+   - Price tracking
+   - Deposit management
+   - Payment status
+   - Budget integration
+
+#### Entity Structure
+
+1. **Vendor Entity**
+   ```php
+   class Vendor
+   {
+       private ?int $id = null;
+       private ?string $name = null;
+       private ?string $company = null;
+       private ?string $type = null;
+       private string $status = 'contacted';
+       private ?string $phone = null;
+       private ?string $email = null;
+       private ?string $website = null;
+       private ?string $address = null;
+       private ?string $notes = null;
+       private ?float $price = null;
+       private ?float $depositAmount = null;
+       private ?bool $depositPaid = null;
+       private ?bool $contractSigned = null;
+       private Collection $files;
+   }
+   ```
+
+2. **VendorFile Entity**
+   ```php
+   class VendorFile
+   {
+       private ?int $id = null;
+       private ?Vendor $vendor = null;
+       private ?string $filename = null;
+       private ?string $originalFilename = null;
+       private ?string $mimeType = null;
+       private ?int $size = null;
+       private ?string $type = null;
+   }
+   ```
+
+#### Frontend Components
+
+1. **Vendor List**
+   - Grid layout
+   - Status indicators
+   - Financial information
+   - File management
+   - Budget integration
+
+2. **Vendor Form**
+   - Basic information
+   - Financial details
+   - File upload
+   - Status management
+   - Contract tracking
+
+#### API Endpoints
+
+1. **Vendor Management**
+   - GET `/api/weddings/{id}/vendors` - List vendors
+   - POST `/api/weddings/{id}/vendors` - Create vendor
+   - PUT `/api/weddings/{id}/vendors/{id}` - Update vendor
+   - DELETE `/api/weddings/{id}/vendors/{id}` - Delete vendor
+
+2. **File Management**
+   - POST `/api/weddings/{id}/vendors/{id}/files` - Upload file
+   - DELETE `/api/weddings/{id}/vendors/{id}/files/{fileId}` - Delete file
+
+#### Security
+
+1. **Access Control**
+   - View permission for listing
+   - Edit permission for modifications
+   - File access control
+   - Wedding-based security
+
+2. **File Security**
+   - Secure storage
+   - MIME type validation
+   - Size limits
+   - Access restrictions
+
+#### Integration Points
+
+1. **Budget Integration**
+   - Automatic expense creation
+   - Budget synchronization
+   - Payment tracking
+   - Financial overview
+
+2. **File System**
+   - Secure uploads
+   - File type handling
+   - Storage management
+   - Access control
+
+### Vendor-Budget Integration
+
+#### Core Functionality
+1. **Automatic Expense Creation**
+   - When a vendor is created with a price
+   - When a vendor's price is updated
+   - When deposit status changes
+   - When payment status changes
+
+2. **Expense Types**
+   - `vendor_deposit`: Initial deposit payment
+   - `vendor_total`: Remaining balance payment
+   - Both linked to the vendor entity
+
+3. **Financial Tracking**
+   - Total vendor cost tracking
+   - Deposit amount and status
+   - Remaining balance calculation
+   - Payment status synchronization
+   - Budget category allocation
+
+#### Data Flow
+1. **Vendor Creation**
+   ```
+   Frontend Form
+   → Create Vendor API
+   → VendorService::createVendor
+   → BudgetService::createExpenseFromVendor
+   → Create Deposit Expense (if applicable)
+   → Create Balance Expense
+   → Update Budget Summary
+   ```
+
+2. **Vendor Update**
+   ```
+   Frontend Form
+   → Update Vendor API
+   → VendorService::updateVendor
+   → BudgetService::syncVendorExpenses
+   → Remove Existing Expenses
+   → Create New Expenses
+   → Update Budget Summary
+   ```
+
+#### Database Relationships
+```sql
+vendor
+  ↓ (1:n)
+expense
+  ↑ (n:1)
+budget
+```
+
+1. **Vendor → Expense**
+   - One vendor can have multiple expenses
+   - Each expense can be linked to one vendor
+   - Expenses marked with `is_vendor_expense`
+
+2. **Budget → Expense**
+   - Budget contains all expenses
+   - Vendor expenses are a subset
+   - Category matching for reporting
+
+#### State Management
+
+1. **Frontend State**
+   ```javascript
+   {
+     vendor: {
+       items: Vendor[],
+       loading: boolean,
+       error: Error | null
+     },
+     budget: {
+       budget: Budget,
+       expenses: Expense[],
+       summary: BudgetSummary,
+       loading: boolean,
+       error: Error | null
+     }
+   }
+   ```
+
+2. **State Updates**
+   - Vendor creation/update triggers budget refresh
+   - Budget summary recalculated after expense changes
+   - Real-time UI updates for financial status
+
+#### UI Components
+
+1. **Vendor Form**
+   - Price input field
+   - Deposit amount field
+   - Deposit paid toggle
+   - Automatic expense creation
+
+2. **Vendor List**
+   - Financial status display
+   - Payment status indicators
+   - Expense breakdown
+   - Budget category allocation
+
+3. **Budget Overview**
+   - Vendor expense totals
+   - Category-wise breakdown
+   - Payment status summary
+   - Remaining balance tracking
+
+#### Security Considerations
+
+1. **Access Control**
+   - Vendor modification requires budget access
+   - Expense creation restricted to vendor owner
+   - Budget viewing permissions required
+
+2. **Data Validation**
+   - Price and deposit amount validation
+   - Payment status verification
+   - Budget limit checks
+   - Category validation
+
+#### Error Handling
+
+1. **Common Scenarios**
+   - No budget exists for wedding
+   - Invalid price/deposit values
+   - Duplicate expense creation
+   - Budget limit exceeded
+
+2. **Recovery Actions**
+   - Automatic budget creation if needed
+   - Expense synchronization on errors
+   - Transaction rollback support
+   - User notification system
+
+#### Integration Testing
+
+1. **Test Scenarios**
+   - Vendor creation with expenses
+   - Price updates and expense sync
+   - Deposit status changes
+   - Payment tracking accuracy
+
+2. **Test Coverage**
+   - Frontend state updates
+   - Backend data integrity
+   - API response validation
+   - Error handling verification

@@ -26,6 +26,13 @@
   - Removed unused entities
   - Fixed entity relationships
   - Improved code organization
+- Budget Management
+  - Budget setup and tracking
+  - Expense management
+  - Vendor expense integration
+  - Payment status tracking
+  - Financial overview
+  - Category breakdown
 
 ## Phase 1 - Core MVP [In Progress]
 1. **Enhanced Authentication** [⏳]
@@ -54,11 +61,13 @@
    - Wedding membership validation ✓
    - Duplicate assignment prevention ✓
 
-4. **Essential Wedding Details** [⏳]
-   - Basic information
-   - Timeline overview
-   - Vendor contacts
-   - Task checklist
+4. **Essential Wedding Details** [✓]
+   - Basic information ✓
+   - Timeline overview ✓
+   - Vendor contacts ✓
+   - Task checklist ✓
+   - Budget tracking ✓
+   - Photo gallery ⏳
 
 ## Phase 2 - Feature Depth [Planned]
 1. **Advanced Table Management**

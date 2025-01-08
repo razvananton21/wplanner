@@ -8,6 +8,7 @@ The codebase documentation is split into three complementary files for better or
 2. `codebase_part2.md`: Backend Architecture
 3. `codebase_part3.md`: Communication & Integration
 
+
 ## When to Use Each File
 
 ### Frontend Architecture (`codebase_part1.md`)

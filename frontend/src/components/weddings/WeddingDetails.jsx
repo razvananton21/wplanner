@@ -34,6 +34,8 @@ import {
   InsertDriveFile as FileIcon,
   Close as CloseIcon,
   Event as EventIcon,
+  CheckCircle as CheckCircleIcon,
+  AccountBalanceWallet as AccountBalanceWalletIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import weddingService from '../../services/weddingService';
@@ -43,6 +45,8 @@ import TableList from '../tables/TableList';
 import GuestList from '../guests/GuestList';
 import FormBuilder from '../form-builder/FormBuilder';
 import VendorList from '../vendors/VendorList';
+import TaskList from '../tasks/TaskList';
+import Budget from '../budget/Budget';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -251,6 +255,12 @@ const WeddingDetails = () => {
                 iconPosition="start"
               />
               <Tab
+                label="Tasks"
+                value="tasks"
+                icon={<CheckCircleIcon />}
+                iconPosition="start"
+              />
+              <Tab
                 label="Vendors"
                 value="vendors"
                 icon={<PeopleIcon />}
@@ -278,6 +288,12 @@ const WeddingDetails = () => {
                 label="Invitation"
                 value="invitation"
                 icon={<FileIcon />}
+                iconPosition="start"
+              />
+              <Tab
+                label="Budget"
+                value="budget"
+                icon={<AccountBalanceWalletIcon />}
                 iconPosition="start"
               />
             </Tabs>
@@ -504,6 +520,14 @@ const WeddingDetails = () => {
                   )}
                 </Grid>
               </Grid>
+            )}
+
+            {activeTab === 'budget' && (
+              <Budget weddingId={wedding.id} />
+            )}
+
+            {activeTab === 'tasks' && (
+              <TaskList weddingId={wedding.id} />
             )}
           </Paper>
         </Box>

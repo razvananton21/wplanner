@@ -63,6 +63,12 @@ class Wedding
     #[ORM\OneToMany(mappedBy: 'wedding', targetEntity: Vendor::class, orphanRemoval: true)]
     private Collection $vendors;
 
+    #[ORM\OneToMany(mappedBy: 'wedding', targetEntity: Task::class, orphanRemoval: true)]
+    private Collection $tasks;
+
+    #[ORM\OneToOne(mappedBy: 'wedding', targetEntity: Budget::class, cascade: ['persist', 'remove'])]
+    private ?Budget $budget = null;
+
     public function __construct()
     {
         $this->tables = new ArrayCollection();
@@ -72,6 +78,7 @@ class Wedding
         $this->guests = new ArrayCollection();
         $this->timelineEvents = new ArrayCollection();
         $this->vendors = new ArrayCollection();
+        $this->tasks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -373,6 +380,58 @@ class Wedding
                 $vendor->setWedding(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Task>
+     */
+    public function getTasks(): Collection
+    {
+        return $this->tasks;
+    }
+
+    public function addTask(Task $task): static
+    {
+        if (!$this->tasks->contains($task)) {
+            $this->tasks->add($task);
+            $task->setWedding($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTask(Task $task): static
+    {
+        if ($this->tasks->removeElement($task)) {
+            // set the owning side to null (unless already changed)
+            if ($task->getWedding() === $this) {
+                $task->setWedding(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getBudget(): ?Budget
+    {
+        return $this->budget;
+    }
+
+    public function setBudget(?Budget $budget): self
+    {
+        // unset the owning side of the relation if necessary
+        if ($budget === null && $this->budget !== null) {
+            $this->budget->setWedding(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($budget !== null && $budget->getWedding() !== $this) {
+            $budget->setWedding($this);
+        }
+
+        $this->budget = $budget;
 
         return $this;
     }

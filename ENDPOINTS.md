@@ -355,6 +355,236 @@
 - Deletes a vendor file
 - **Required Permission**: `edit` on wedding
 
+### Tasks
+
+#### List Tasks
+- **GET** `/api/weddings/{id}/tasks`
+- Returns list of tasks for a wedding
+- **Required Permission**: `view` on wedding
+- **Response**:
+  ```json
+  {
+    "tasks": [
+      {
+        "id": "integer",
+        "title": "string",
+        "description": "string",
+        "category": "string",
+        "status": "string",
+        "priority": "integer",
+        "isCompleted": "boolean",
+        "dueDate": "datetime",
+        "notes": "string",
+        "displayOrder": "integer",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    ]
+  }
+  ```
+
+#### List Incomplete Tasks
+- **GET** `/api/weddings/{id}/tasks/incomplete`
+- Returns list of incomplete tasks for a wedding
+- **Required Permission**: `view` on wedding
+
+#### List Tasks by Category
+- **GET** `/api/weddings/{id}/tasks/category/{category}`
+- Returns list of tasks filtered by category
+- **Required Permission**: `view` on wedding
+
+#### List Overdue Tasks
+- **GET** `/api/weddings/{id}/tasks/overdue`
+- Returns list of overdue tasks
+- **Required Permission**: `view` on wedding
+
+#### List Upcoming Tasks
+- **GET** `/api/weddings/{id}/tasks/upcoming`
+- Returns list of upcoming tasks
+- **Required Permission**: `view` on wedding
+- **Query Parameters**:
+  - `days`: Number of days to look ahead (default: 7)
+
+#### Create Task
+- **POST** `/api/weddings/{id}/tasks`
+- Creates a new task for a wedding
+- **Required Permission**: `edit` on wedding
+- **Body**:
+  ```json
+  {
+    "title": "string",
+    "description": "string",
+    "category": "string",
+    "status": "string",
+    "priority": "integer",
+    "dueDate": "datetime",
+    "notes": "string",
+    "displayOrder": "integer"
+  }
+  ```
+
+#### Get Task
+- **GET** `/api/weddings/{id}/tasks/{taskId}`
+- Returns details of a specific task
+- **Required Permission**: `view` on wedding
+
+#### Update Task
+- **PUT** `/api/weddings/{id}/tasks/{taskId}`
+- Updates an existing task
+- **Required Permission**: `edit` on wedding
+- **Body**: Same as Create Task
+
+#### Delete Task
+- **DELETE** `/api/weddings/{id}/tasks/{taskId}`
+- Deletes a task
+- **Required Permission**: `edit` on wedding
+
+#### Reorder Tasks
+- **PUT** `/api/weddings/{id}/tasks/reorder`
+- Updates the display order of tasks
+- **Required Permission**: `edit` on wedding
+- **Body**:
+  ```json
+  {
+    "taskOrders": [
+      {
+        "id": "integer",
+        "order": "integer"
+      }
+    ]
+  }
+  ```
+
+### Budget Management
+
+#### Get Wedding Budget
+- **GET** `/api/weddings/{id}/budget`
+- Returns budget and summary information for a wedding
+- **Required Permission**: `view` on wedding
+- **Response**:
+  ```json
+  {
+    "budget": {
+      "id": "integer",
+      "totalAmount": "number",
+      "categoryAllocations": "object",
+      "createdAt": "datetime",
+      "updatedAt": "datetime"
+    },
+    "summary": {
+      "totalBudget": "number",
+      "totalSpent": "number",
+      "totalPaid": "number",
+      "totalPending": "number",
+      "remainingBudget": "number",
+      "categoryAllocations": "object",
+      "spentByCategory": "object",
+      "pendingByCategory": "object"
+    }
+  }
+  ```
+
+#### Create Wedding Budget
+- **POST** `/api/weddings/{id}/budget`
+- Creates a new budget for a wedding
+- **Required Permission**: `edit` on wedding
+- **Body**:
+  ```json
+  {
+    "totalAmount": "number",
+    "categoryAllocations": {
+      "category1": "number",
+      "category2": "number"
+    }
+  }
+  ```
+
+#### Update Wedding Budget
+- **PUT** `/api/weddings/{id}/budget`
+- Updates an existing wedding budget
+- **Required Permission**: `edit` on wedding
+- **Body**: Same as Create Wedding Budget
+
+#### Get Wedding Expenses
+- **GET** `/api/weddings/{id}/expenses`
+- Returns list of expenses for a wedding
+- **Required Permission**: `view` on wedding
+- **Response**:
+  ```json
+  {
+    "expenses": [
+      {
+        "id": "integer",
+        "category": "string",
+        "description": "string",
+        "amount": "number",
+        "type": "string",
+        "status": "string",
+        "paidAmount": "number",
+        "dueDate": "datetime",
+        "paidAt": "datetime",
+        "isVendorExpense": "boolean",
+        "vendor": {
+          "id": "integer",
+          "name": "string"
+        },
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    ],
+    "budget": "object",
+    "summary": "object"
+  }
+  ```
+
+#### Create Wedding Expense
+- **POST** `/api/weddings/{id}/expenses`
+- Creates a new expense for a wedding
+- **Required Permission**: `edit` on wedding
+- **Body**:
+  ```json
+  {
+    "category": "string",
+    "description": "string",
+    "amount": "number",
+    "status": "string",
+    "paidAmount": "number",
+    "dueDate": "datetime"
+  }
+  ```
+
+#### Update Wedding Expense
+- **PUT** `/api/weddings/{wedding}/expenses/{id}`
+- Updates an existing expense
+- **Required Permission**: `edit` on wedding
+- **Body**: Same as Create Wedding Expense
+
+#### Delete Wedding Expense
+- **DELETE** `/api/weddings/{wedding}/expenses/{id}`
+- Deletes an expense
+- **Required Permission**: `edit` on wedding
+
+#### Get Budget Summary
+- **GET** `/api/weddings/{id}/budget/summary`
+- Returns budget summary information
+- **Required Permission**: `view` on wedding
+- **Response**:
+  ```json
+  {
+    "budget": "object",
+    "summary": {
+      "totalBudget": "number",
+      "totalSpent": "number",
+      "totalPaid": "number",
+      "totalPending": "number",
+      "remainingBudget": "number",
+      "categoryAllocations": "object",
+      "spentByCategory": "object",
+      "pendingByCategory": "object"
+    }
+  }
+  ```
+
 ## Part 2: Adding New Endpoints Guide
 
 ### Backend (Symfony)
