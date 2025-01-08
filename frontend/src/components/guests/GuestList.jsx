@@ -87,8 +87,23 @@ const GuestList = () => {
     };
 
     const handleEditGuest = (guest) => {
-        setSelectedGuest(guest);
-        setEditModalOpen(true);
+        if (guest && guest.id) {
+            setSelectedGuest(guest);
+            setEditModalOpen(true);
+        }
+    };
+
+    const handleCloseEditModal = () => {
+        setEditModalOpen(false);
+        setTimeout(() => setSelectedGuest(null), 300);
+    };
+
+    const handleAddGuest = () => {
+        setAddModalOpen(true);
+    };
+
+    const handleCloseAddModal = () => {
+        setAddModalOpen(false);
     };
 
     const renderRsvpResponses = (guest) => {
@@ -277,7 +292,7 @@ const GuestList = () => {
                     <Button
                         variant="contained"
                         startIcon={<AddIcon />}
-                        onClick={() => setAddModalOpen(true)}
+                        onClick={handleAddGuest}
                     >
                         Add Guest
                     </Button>
@@ -343,29 +358,26 @@ const GuestList = () => {
             {/* Modals */}
             <Dialog
                 open={isAddModalOpen}
-                onClose={() => setAddModalOpen(false)}
+                onClose={handleCloseAddModal}
                 maxWidth="sm"
                 fullWidth
             >
                 <AddGuestForm
                     weddingId={weddingId}
-                    onClose={() => setAddModalOpen(false)}
+                    onClose={handleCloseAddModal}
                 />
             </Dialog>
 
             <Dialog
                 open={isEditModalOpen}
-                onClose={() => setEditModalOpen(false)}
+                onClose={handleCloseEditModal}
                 maxWidth="sm"
                 fullWidth
             >
                 <EditGuestForm
                     weddingId={weddingId}
                     guest={selectedGuest}
-                    onClose={() => {
-                        setEditModalOpen(false);
-                        setSelectedGuest(null);
-                    }}
+                    onClose={handleCloseEditModal}
                 />
             </Dialog>
 

@@ -10,6 +10,7 @@ parameters:
     app.jwt_passphrase: '%env(JWT_PASSPHRASE)%'
     app.jwt_secret_key: '%env(JWT_SECRET_KEY)%'
     app.upload_directory: '%kernel.project_dir%/public/uploads'
+    app.vendor_upload_directory: '%kernel.project_dir%/public/uploads/vendors'
     # Disable interactive mode for Symfony commands
     console.command.no_interaction: true
 
@@ -19,7 +20,7 @@ services:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
-            $uploadDir: '%app.upload_directory%'
+            $uploadDir: '%app.vendor_upload_directory%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

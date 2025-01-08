@@ -85,6 +85,9 @@ class Guest
   - Focus states
   - Selection indicators
   - Error states
+  - Success messages with personalized content
+  - Plus-one confirmation display
+  - Clear submission feedback
 - Accessibility features:
   - Clear labels
   - High contrast
@@ -199,17 +202,21 @@ class Guest
   - Location tracking ✓
   - Minimum capacity settings ✓
   - Available seats monitoring ✓
+  - Integrated within wedding details view ✓
 - Guest seating assignments ✓
   - Drag-and-drop interface ✓
   - Search functionality ✓
   - Capacity validation ✓
   - Dietary restrictions display ✓
   - Guest count tracking ✓
+  - Improved assignment persistence ✓
+  - Enhanced error handling ✓
 - Table capacity management ✓
   - Maximum capacity limits ✓
   - Minimum capacity requirements ✓
   - Available seats calculation ✓
   - Capacity validation ✓
+  - Consistent state updates ✓
 - Dietary restrictions visualization ✓
   - Display in guest list ✓
   - Consideration during assignments ✓
@@ -220,16 +227,111 @@ class Guest
   - Real-time feedback ✓
   - Wedding membership validation ✓
   - Duplicate assignment prevention ✓
+  - Proper error handling and recovery ✓
 
-### 5. Wedding Details [⏳]
-- Basic wedding information
-- Timeline management
-- Vendor management
-- Budget tracking
-- Task checklist
-- Photo gallery
+### 5. Wedding Details [✓]
+- Basic wedding information ✓
+- Timeline management ✓
+- Integrated table management ✓
+- Consistent tab-based navigation ✓
+- Guest management integration ✓
+- RSVP form customization ✓
+- Vendor management ✓
+- Budget tracking ⏳
+- Task checklist ⏳
+- Photo gallery ⏳
 
-### 6. Notification System [✓]
+### 6. Vendor Management [✓]
+
+#### Vendor Entity Structure [✓]
+```php
+class Vendor
+{
+    private ?int $id = null;
+    private ?string $name = null;
+    private ?string $company = null;
+    private ?string $type = null;
+    private string $status = 'contacted';
+    private ?string $phone = null;
+    private ?string $email = null;
+    private ?string $website = null;
+    private ?string $address = null;
+    private ?string $notes = null;
+    private ?float $price = null;
+    private ?float $depositAmount = null;
+    private ?bool $depositPaid = null;
+    private ?bool $contractSigned = null;
+    private Collection $files;
+    private ?\DateTimeImmutable $createdAt = null;
+    private ?\DateTimeImmutable $updatedAt = null;
+}
+```
+
+#### Features [✓]
+- Create and manage vendors ✓
+  - Basic vendor information (name, company) ✓
+  - Contact details (phone, email, website, address) ✓
+  - Service type categorization ✓
+  - Status tracking ✓
+  - Financial information ✓
+  - Contract management ✓
+  - File attachments ✓
+  - Notes and comments ✓
+
+#### Vendor Types [✓]
+- Photographer
+- Videographer
+- Caterer
+- Florist
+- Music
+- Venue
+- Decor
+- Cake
+- Attire
+- Transport
+- Other
+
+#### Status Tracking [✓]
+- Contacted
+- In Talks
+- Proposal Received
+- Booked
+- Confirmed
+- Cancelled
+
+#### File Management [✓]
+- File upload support ✓
+  - Multiple file types ✓
+  - Original filename preservation ✓
+  - MIME type detection ✓
+  - File size tracking ✓
+- File categorization ✓
+  - Contracts ✓
+  - Proposals ✓
+  - General documents ✓
+- Secure file storage ✓
+  - Dedicated vendor uploads directory ✓
+  - File access control ✓
+  - Safe filename generation ✓
+
+#### User Interface [✓]
+- Modern grid layout ✓
+- Vendor cards with key information ✓
+- Status indicators ✓
+- Financial overview ✓
+- File management interface ✓
+- Responsive design ✓
+- Mobile-friendly interactions ✓
+
+#### Data Management [✓]
+- Automatic timestamps ✓
+- Status history ✓
+- File tracking ✓
+- Wedding association ✓
+- Data validation ✓
+- Error handling ✓
+
+### 7. Notification System [✓]
 
 #### Features
 - RSVP submission notifications
@@ -246,7 +348,7 @@ class Guest
 - Future: Table assignment notifications
 - Future: Wedding detail updates
 
-### 7. Email System [✓]
+### 8. Email System [✓]
 
 #### Development Environment
 - MailHog integration

@@ -26,7 +26,13 @@ import {
     Warning as WarningIcon
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { fetchTable, assignGuests, removeGuest, validateAssignment } from '@/store/slices/tableSlice';
+import {
+    fetchTable,
+    assignGuests,
+    removeGuest,
+    validateAssignment,
+    fetchTables
+} from '@/store/slices/tableSlice';
 import { fetchGuests } from '@/features/guests/guestSlice';
 
 const TableAssignment = ({ table, onClose }) => {
@@ -45,10 +51,13 @@ const TableAssignment = ({ table, onClose }) => {
     }, [dispatch, table]);
 
     useEffect(() => {
-        if (selectedTable) {
-            setSelectedGuests(selectedTable.guests || []);
+        if (selectedTable && selectedTable.guests) {
+            const fullGuests = selectedTable.guests.map(tableGuest => 
+                guests.find(g => g.id === tableGuest.id) || tableGuest
+            );
+            setSelectedGuests(fullGuests);
         }
-    }, [selectedTable]);
+    }, [selectedTable, guests]);
 
     const handleSearch = (event) => {
         setSearchTerm(event.target.value);
@@ -56,12 +65,16 @@ const TableAssignment = ({ table, onClose }) => {
 
     const filteredGuests = guests.filter(guest => {
         const fullName = `${guest.firstName} ${guest.lastName}`.toLowerCase();
-        return fullName.includes(searchTerm.toLowerCase()) &&
-            !selectedGuests.find(g => g.id === guest.id) &&
-            !guest.table;
+        const isMatchingSearch = fullName.includes(searchTerm.toLowerCase());
+        const isNotSelected = !selectedGuests.find(g => g.id === guest.id);
+        const isNotAssignedOrAssignedToThisTable = !guest.table || (table && guest.table.id === table.id);
+        
+        return isMatchingSearch && isNotSelected && isNotAssignedOrAssignedToThisTable;
     });
 
     const handleAddGuest = async (guest) => {
+        if (!table) return;
+
         const newSelectedGuests = [...selectedGuests, guest];
         
         const validation = await dispatch(validateAssignment({
@@ -69,7 +82,7 @@ const TableAssignment = ({ table, onClose }) => {
             guestIds: newSelectedGuests.map(g => g.id)
         }));
 
-        if (validation.payload.isValid) {
+        if (validation.payload && validation.payload.isValid) {
             setSelectedGuests(newSelectedGuests);
         }
     };
@@ -79,12 +92,16 @@ const TableAssignment = ({ table, onClose }) => {
     };
 
     const handleSave = async () => {
+        if (!table || !table.wedding) return;
+
         const result = await dispatch(assignGuests({
             tableId: table.id,
             guestIds: selectedGuests.map(guest => guest.id)
         }));
 
         if (!result.error) {
+            await dispatch(fetchTables(table.wedding.id));
+            await dispatch(fetchTable(table.id));
             onClose();
         }
     };

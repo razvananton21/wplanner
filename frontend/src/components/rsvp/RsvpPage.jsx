@@ -670,6 +670,44 @@ export default function RsvpPage() {
         <CircularProgress />
       ) : error ? (
         <Alert severity="error">{error}</Alert>
+      ) : success ? (
+        <StyledCard>
+          <CardContent sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="h4" gutterBottom color="primary">
+              Thank You!
+            </Typography>
+            <Typography 
+              variant="h5" 
+              color="text.secondary" 
+              sx={{ 
+                mb: 4,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                fontWeight: 500,
+                letterSpacing: '-0.3px'
+              }}
+            >
+              Your RSVP has been successfully submitted.
+            </Typography>
+            <Typography 
+              variant="body1" 
+              color="text.secondary"
+              sx={{ mb: 4 }}
+            >
+              {formData.attending 
+                ? "We're looking forward to celebrating with you!" 
+                : "We'll miss you, but thank you for letting us know."}
+            </Typography>
+            {formData.attending && formData.hasPlusOne && formData.plusOne.attending && (
+              <Typography 
+                variant="body1" 
+                color="text.secondary"
+                sx={{ mb: 4 }}
+              >
+                We've also registered {formData.plusOne.firstName} as your plus one.
+              </Typography>
+            )}
+          </CardContent>
+        </StyledCard>
       ) : (
         <>
           {guest?.wedding?.invitationPdfUrl && !showRsvpForm && (

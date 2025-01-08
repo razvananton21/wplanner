@@ -261,6 +261,100 @@
 - Deletes a timeline event
 - **Required Permission**: `edit` on wedding
 
+### Vendors
+
+#### List Vendors
+- **GET** `/api/weddings/{weddingId}/vendors`
+- Returns list of vendors for a wedding
+- **Required Permission**: `view` on wedding
+- **Response**:
+  ```json
+  {
+    "vendors": [
+      {
+        "id": "integer",
+        "name": "string",
+        "company": "string",
+        "type": "string",
+        "status": "string",
+        "phone": "string",
+        "email": "string",
+        "website": "string",
+        "address": "string",
+        "notes": "string",
+        "price": "number",
+        "depositAmount": "number",
+        "depositPaid": "boolean",
+        "contractSigned": "boolean",
+        "files": [
+          {
+            "id": "integer",
+            "filename": "string",
+            "originalFilename": "string",
+            "mimeType": "string",
+            "size": "integer",
+            "type": "string",
+            "createdAt": "datetime"
+          }
+        ],
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    ]
+  }
+  ```
+
+#### Get Vendor
+- **GET** `/api/weddings/{weddingId}/vendors/{id}`
+- Returns details of a specific vendor
+- **Required Permission**: `view` on wedding
+
+#### Create Vendor
+- **POST** `/api/weddings/{weddingId}/vendors`
+- Creates a new vendor for a wedding
+- **Required Permission**: `edit` on wedding
+- **Body**:
+  ```json
+  {
+    "name": "string",
+    "company": "string",
+    "type": "string",
+    "phone": "string",
+    "email": "string",
+    "website": "string",
+    "address": "string",
+    "notes": "string",
+    "price": "number",
+    "depositAmount": "number",
+    "depositPaid": "boolean",
+    "contractSigned": "boolean"
+  }
+  ```
+
+#### Update Vendor
+- **PUT** `/api/weddings/{weddingId}/vendors/{id}`
+- Updates an existing vendor
+- **Required Permission**: `edit` on wedding
+- **Body**: Same as Create Vendor
+
+#### Delete Vendor
+- **DELETE** `/api/weddings/{weddingId}/vendors/{id}`
+- Deletes a vendor and associated files
+- **Required Permission**: `edit` on wedding
+
+#### Upload Vendor File
+- **POST** `/api/weddings/{weddingId}/vendors/{id}/files`
+- Uploads a file for a vendor
+- **Required Permission**: `edit` on wedding
+- **Body**: multipart/form-data
+  - `file`: File to upload
+  - `type`: File type (e.g., 'contract', 'proposal', 'document')
+
+#### Delete Vendor File
+- **DELETE** `/api/weddings/{weddingId}/vendors/{id}/files/{fileId}`
+- Deletes a vendor file
+- **Required Permission**: `edit` on wedding
+
 ## Part 2: Adding New Endpoints Guide
 
 ### Backend (Symfony)

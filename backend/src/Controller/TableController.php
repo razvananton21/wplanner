@@ -206,6 +206,7 @@ class TableController extends AbstractController
 
         // Remove all current guests
         foreach ($table->getGuests() as $guest) {
+            $table->removeGuest($guest);
             $guest->setTable(null);
         }
 
@@ -221,11 +222,13 @@ class TableController extends AbstractController
                 $errors[] = "Guest with ID $guestId does not belong to this wedding";
                 continue;
             }
-            if ($guest->getTable() !== null) {
-                $errors[] = "Guest with ID $guestId is already assigned to table " . $guest->getTable()->getName();
-                continue;
+            // Remove guest from their current table if they have one
+            if ($guest->getTable() !== null && $guest->getTable() !== $table) {
+                $guest->getTable()->removeGuest($guest);
+                $guest->setTable(null);
             }
             $table->addGuest($guest);
+            $guest->setTable($table);
         }
 
         if (!empty($errors)) {
@@ -242,10 +245,22 @@ class TableController extends AbstractController
 
         $this->entityManager->flush();
 
+        // Refresh the table entity to ensure we have the latest data
+        $this->entityManager->refresh($table);
+
         return $this->json([
             'success' => true,
             'guestCount' => $table->getCurrentGuestCount(),
             'availableSeats' => $table->getAvailableSeats(),
+            'guests' => array_map(function($guest) {
+                return [
+                    'id' => $guest->getId(),
+                    'firstName' => $guest->getFirstName(),
+                    'lastName' => $guest->getLastName(),
+                    'email' => $guest->getEmail(),
+                    'status' => $guest->getStatus()
+                ];
+            }, $table->getGuests()->toArray())
         ]);
     }
 

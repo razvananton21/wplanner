@@ -37,7 +37,7 @@ const EditGuestForm = ({ weddingId, guest, onClose }) => {
         reset
     } = useForm({
         resolver: yupResolver(schema),
-        defaultValues: {
+        defaultValues: guest ? {
             firstName: guest.firstName,
             lastName: guest.lastName,
             email: guest.email,
@@ -45,19 +45,21 @@ const EditGuestForm = ({ weddingId, guest, onClose }) => {
             status: guest.status,
             plusOne: guest.plusOne,
             dietaryRestrictions: guest.dietaryRestrictions
-        }
+        } : {}
     });
 
     useEffect(() => {
-        reset({
-            firstName: guest.firstName,
-            lastName: guest.lastName,
-            email: guest.email,
-            category: guest.category,
-            status: guest.status,
-            plusOne: guest.plusOne,
-            dietaryRestrictions: guest.dietaryRestrictions
-        });
+        if (guest) {
+            reset({
+                firstName: guest.firstName,
+                lastName: guest.lastName,
+                email: guest.email,
+                category: guest.category,
+                status: guest.status,
+                plusOne: guest.plusOne,
+                dietaryRestrictions: guest.dietaryRestrictions
+            });
+        }
     }, [guest, reset]);
 
     const onSubmit = async (data) => {
@@ -75,6 +77,8 @@ const EditGuestForm = ({ weddingId, guest, onClose }) => {
             });
         }
     };
+
+    if (!guest) return null;
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>

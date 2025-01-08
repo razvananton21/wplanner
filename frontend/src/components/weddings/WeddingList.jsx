@@ -67,7 +67,7 @@ const WeddingList = () => {
   };
 
   const handleEditWedding = (id) => {
-    navigate(`/weddings/${id}/edit`);
+    navigate(`/weddings/${id}`, { state: { startEditing: true } });
   };
 
   if (loading) {

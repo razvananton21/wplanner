@@ -72,6 +72,35 @@ graph TD
     F -->|update| G[Redux Store]
 ```
 
+### 6. Vendor Management Flow
+```mermaid
+graph TD
+    A[VendorList.jsx] -->|data| B[vendorService.js]
+    B -->|GET/POST/PUT/DELETE| C[VendorController.php]
+    C -->|validate| D[VendorService.php]
+    D -->|save| E[VendorRepository.php]
+    E -->|vendor| D
+    D -->|result| C
+    C -->|response| B
+    B -->|dispatch| F[vendorSlice.js]
+    F -->|update| G[Redux Store]
+```
+
+### 7. File Upload Flow
+```mermaid
+graph TD
+    A[VendorForm.jsx] -->|file| B[vendorService.js]
+    B -->|POST multipart| C[VendorController.php]
+    C -->|process| D[FileService.php]
+    D -->|save| E[File System]
+    D -->|create| F[VendorFileRepository.php]
+    F -->|file| D
+    D -->|result| C
+    C -->|response| B
+    B -->|dispatch| G[vendorSlice.js]
+    G -->|update| H[Redux Store]
+```
+
 ## State Management Patterns
 
 ### 1. Data Loading
@@ -241,6 +270,18 @@ class ErrorBoundary extends React.Component {
 - Backend: `NotificationController.php`, WebSocket server
 - Communication: WebSocket, REST API
 - Storage: Redux store, database
+
+### 5. Vendor Management Integration
+- Frontend: `vendorService.js`, `vendorSlice.js`
+- Backend: `VendorController.php`, `VendorService.php`
+- Communication: REST API, Multipart form data
+- Storage: File system, database
+
+### 6. File Management Integration
+- Frontend: `VendorForm.jsx`, `vendorService.js`
+- Backend: `VendorController.php`, `FileService.php`
+- Communication: Multipart form data
+- Storage: File system, database references
 
 ## Testing Integration
 

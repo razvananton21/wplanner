@@ -14,10 +14,7 @@ import PrivateRoute from './components/routing/PrivateRoute';
 import WeddingList from './components/weddings/WeddingList';
 import CreateWedding from './components/weddings/CreateWedding';
 import WeddingDetails from './components/weddings/WeddingDetails';
-import GuestList from './components/guests/GuestList';
-import TableList from './components/tables/TableList';
 import RsvpPage from './components/rsvp/RsvpPage';
-import FormBuilder from './components/form-builder/FormBuilder';
 
 const App = () => {
   const navigate = useNavigate();
@@ -68,9 +65,6 @@ const App = () => {
             <Route path="/weddings" element={<WeddingList />} />
             <Route path="/weddings/new" element={<CreateWedding />} />
             <Route path="/weddings/:id" element={<WeddingDetails />} />
-            <Route path="/weddings/:id/guests" element={<GuestList />} />
-            <Route path="/weddings/:id/tables" element={<TableList />} />
-            <Route path="/weddings/:id/rsvp-form" element={<FormBuilder />} />
           </Route>
         </Route>
 

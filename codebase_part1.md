@@ -120,6 +120,24 @@
   - Used by: TableList
   - Dependencies: TableService
 
+#### Vendor Components (`components/vendors/`)
+- `VendorList.jsx`
+  - Grid layout display
+  - Status indicators
+  - Financial overview
+  - Contact information
+  - File management
+  - Used by: WeddingDetails
+  - Dependencies: VendorService
+
+- `VendorForm.jsx`
+  - Vendor creation/editing
+  - File upload handling
+  - Status management
+  - Type selection
+  - Used by: VendorList
+  - Dependencies: VendorService
+
 ### 2. Services (`src/services/`)
 
 #### API Configuration (`api.js`)
@@ -188,6 +206,20 @@
   ```
 - Used by: Table components
 - Endpoints: `/api/weddings/{id}/tables/*`
+
+#### Vendor Management (`vendorService.js`)
+- Methods:
+  ```javascript
+  getVendors(weddingId)
+  getVendor(weddingId, vendorId)
+  createVendor(weddingId, data)
+  updateVendor(weddingId, vendorId, data)
+  deleteVendor(weddingId, vendorId)
+  uploadFile(weddingId, vendorId, file, type)
+  deleteFile(weddingId, vendorId, fileId)
+  ```
+- Used by: Vendor components
+- Endpoints: `/api/weddings/{id}/vendors/*`
 
 ### 3. State Management (`src/store/`)
 
@@ -266,6 +298,28 @@
   - deleteTable
   - assignGuests
 - Used by: Table components
+
+#### Vendor State Management (`vendorSlice.js`)
+- State shape:
+  ```javascript
+  {
+    items: Vendor[],
+    loading: boolean,
+    error: Error | null,
+    files: {
+      uploading: boolean,
+      error: Error | null
+    }
+  }
+  ```
+- Actions:
+  - fetchVendors
+  - createVendor
+  - updateVendor
+  - deleteVendor
+  - uploadFile
+  - deleteFile
+- Used by: Vendor components
 
 ### 4. Custom Hooks (`src/hooks/`)
 

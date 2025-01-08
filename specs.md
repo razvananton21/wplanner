@@ -108,6 +108,9 @@
      - Responsive typography
      - Intuitive form sections
      - Clear visual hierarchy
+     - Personalized success messages based on attendance
+     - Plus-one confirmation in success message
+     - Clear submission feedback
    - Mobile optimizations:
      - Touch-friendly hit areas
      - Responsive spacing
@@ -459,6 +462,10 @@ class Table
 - Assignment validation ✓
 - Dietary restrictions consideration ✓
 - Timeline management ✓
+- Integrated table management within wedding details ✓
+- Consistent tab-based navigation across sections ✓
+- Improved guest assignment persistence ✓
+- Enhanced error handling for guest assignments ✓
 
 #### API Endpoints
 
@@ -670,3 +677,108 @@ class Table
 - Clear component hierarchy
 - Proper separation of concerns
 - Documentation of changes in specification files
+
+### Vendor Management [✓]
+
+#### Entity Structure [✓]
+1. **Vendor Entity**
+   ```php
+   class Vendor
+   {
+       private ?int $id;
+       private ?string $name;
+       private ?string $company;
+       private ?string $type;
+       private string $status;
+       private ?string $phone;
+       private ?string $email;
+       private ?string $website;
+       private ?string $address;
+       private ?string $notes;
+       private ?float $price;
+       private ?float $depositAmount;
+       private ?bool $depositPaid;
+       private ?bool $contractSigned;
+       private Collection $files;
+       private ?\DateTimeImmutable $createdAt;
+       private ?\DateTimeImmutable $updatedAt;
+   }
+   ```
+
+2. **VendorFile Entity**
+   ```php
+   class VendorFile
+   {
+       private ?int $id;
+       private ?Vendor $vendor;
+       private ?string $filename;
+       private ?string $originalFilename;
+       private ?string $mimeType;
+       private ?int $size;
+       private ?string $type;
+       private ?\DateTimeImmutable $createdAt;
+   }
+   ```
+
+#### API Endpoints [✓]
+
+1. **Vendor Management**
+   - GET `/api/weddings/{id}/vendors` - List all vendors ✓
+   - POST `/api/weddings/{id}/vendors` - Create vendor ✓
+   - GET `/api/weddings/{id}/vendors/{vendorId}` - Get vendor details ✓
+   - PUT `/api/weddings/{id}/vendors/{vendorId}` - Update vendor ✓
+   - DELETE `/api/weddings/{id}/vendors/{vendorId}` - Delete vendor ✓
+
+2. **File Management**
+   - POST `/api/weddings/{id}/vendors/{vendorId}/files` - Upload file ✓
+   - DELETE `/api/weddings/{id}/vendors/{vendorId}/files/{fileId}` - Delete file ✓
+
+#### Security [✓]
+
+1. **Access Control**
+   - View permission required for listing and viewing vendors ✓
+   - Edit permission required for creating, updating, and deleting vendors ✓
+   - File operations require edit permission ✓
+
+2. **File Security**
+   - Secure file storage in dedicated directory ✓
+   - Safe filename generation ✓
+   - MIME type validation ✓
+   - File size tracking ✓
+
+#### Frontend Components [✓]
+
+1. **VendorList**
+   - Grid layout for vendor cards ✓
+   - Status indicators with colors ✓
+   - Financial information display ✓
+   - Contact details with links ✓
+   - File management interface ✓
+   - Add/Edit/Delete functionality ✓
+
+2. **VendorForm**
+   - Form fields for all vendor properties ✓
+   - File upload interface ✓
+   - Status selection ✓
+   - Type selection ✓
+   - Validation and error handling ✓
+
+3. **State Management**
+   - Redux integration ✓
+   - API service layer ✓
+   - File upload handling ✓
+   - Error state management ✓
+
+#### File Storage [✓]
+
+1. **Configuration**
+   - Dedicated vendor uploads directory ✓
+   - Configurable through services.yaml ✓
+   - Automatic directory creation ✓
+
+2. **File Handling**
+   - Secure file uploads ✓
+   - Original filename preservation ✓
+   - MIME type detection ✓
+   - File size tracking ✓
+   - Safe file deletion ✓

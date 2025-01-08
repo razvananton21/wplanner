@@ -60,6 +60,9 @@ class Wedding
     #[Groups(['wedding:read'])]
     private Collection $timelineEvents;
 
+    #[ORM\OneToMany(mappedBy: 'wedding', targetEntity: Vendor::class, orphanRemoval: true)]
+    private Collection $vendors;
+
     public function __construct()
     {
         $this->tables = new ArrayCollection();
@@ -68,6 +71,7 @@ class Wedding
         $this->formFields = new ArrayCollection();
         $this->guests = new ArrayCollection();
         $this->timelineEvents = new ArrayCollection();
+        $this->vendors = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -337,6 +341,36 @@ class Wedding
             // set the owning side to null (unless already changed)
             if ($timelineEvent->getWedding() === $this) {
                 $timelineEvent->setWedding(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Vendor>
+     */
+    public function getVendors(): Collection
+    {
+        return $this->vendors;
+    }
+
+    public function addVendor(Vendor $vendor): static
+    {
+        if (!$this->vendors->contains($vendor)) {
+            $this->vendors->add($vendor);
+            $vendor->setWedding($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVendor(Vendor $vendor): static
+    {
+        if ($this->vendors->removeElement($vendor)) {
+            // set the owning side to null (unless already changed)
+            if ($vendor->getWedding() === $this) {
+                $vendor->setWedding(null);
             }
         }
 

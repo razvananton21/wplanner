@@ -76,6 +76,21 @@
   - WeddingRepository
 - Used by: Frontend table services
 
+#### Vendor Management (`VendorController.php`)
+- Purpose: Vendor and file management
+- Endpoints:
+  ```php
+  #[Route('/api/weddings/{weddingId}/vendors', methods: ['GET', 'POST'])]
+  #[Route('/api/weddings/{weddingId}/vendors/{id}', methods: ['GET', 'PUT', 'DELETE'])]
+  #[Route('/api/weddings/{weddingId}/vendors/{id}/files', methods: ['POST'])]
+  #[Route('/api/weddings/{weddingId}/vendors/{id}/files/{fileId}', methods: ['DELETE'])]
+  ```
+- Dependencies:
+  - VendorService
+  - FileService
+  - WeddingRepository
+- Used by: Frontend vendor services
+
 ### 2. Entities (`src/Entity/`)
 
 #### User Entity (`User.php`)
@@ -170,6 +185,53 @@
   - RsvpController
   - GuestController
 
+#### Vendor Entity (`Vendor.php`)
+- Properties:
+  ```php
+  private ?int $id;
+  private ?string $name;
+  private ?string $company;
+  private ?string $type;
+  private string $status;
+  private ?string $phone;
+  private ?string $email;
+  private ?string $website;
+  private ?string $address;
+  private ?string $notes;
+  private ?float $price;
+  private ?float $depositAmount;
+  private ?bool $depositPaid;
+  private ?bool $contractSigned;
+  private Collection $files;
+  private ?\DateTimeImmutable $createdAt;
+  private ?\DateTimeImmutable $updatedAt;
+  ```
+- Relationships:
+  - ManyToOne: wedding
+  - OneToMany: files
+- Used by:
+  - VendorController
+  - VendorRepository
+  - WeddingController
+
+#### VendorFile Entity (`VendorFile.php`)
+- Properties:
+  ```php
+  private ?int $id;
+  private ?Vendor $vendor;
+  private ?string $filename;
+  private ?string $originalFilename;
+  private ?string $mimeType;
+  private ?int $size;
+  private ?string $type;
+  private ?\DateTimeImmutable $createdAt;
+  ```
+- Relationships:
+  - ManyToOne: vendor
+- Used by:
+  - VendorController
+  - FileService
+
 ### 3. Repositories (`src/Repository/`)
 
 #### User Repository (`UserRepository.php`)
@@ -219,6 +281,27 @@
 - Used by:
   - TableController
   - GuestController
+
+#### Vendor Repository (`VendorRepository.php`)
+- Methods:
+  ```php
+  public function findByWedding(Wedding $wedding): array
+  public function findByWeddingAndType(Wedding $wedding, string $type): array
+  public function findByWeddingAndStatus(Wedding $wedding, string $status): array
+  ```
+- Used by:
+  - VendorController
+  - VendorService
+
+#### VendorFile Repository (`VendorFileRepository.php`)
+- Methods:
+  ```php
+  public function findByVendor(Vendor $vendor): array
+  public function findByVendorAndType(Vendor $vendor, string $type): array
+  ```
+- Used by:
+  - VendorController
+  - FileService
 
 ### 4. Services (`src/Service/`)
 
@@ -279,6 +362,20 @@
   - GuestRepository
 - Used by:
   - TableController
+
+#### Vendor Service (`VendorService.php`)
+- Methods:
+  ```php
+  public function create(array $data, Wedding $wedding): Vendor
+  public function update(Vendor $vendor, array $data): Vendor
+  public function delete(Vendor $vendor): void
+  public function uploadFile(Vendor $vendor, UploadedFile $file): string
+  ```
+- Dependencies:
+  - VendorRepository
+  - FileService
+- Used by:
+  - VendorController
 
 ### 5. Security (`src/Security/`)
 

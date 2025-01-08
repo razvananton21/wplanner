@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -40,6 +40,9 @@ import weddingService from '../../services/weddingService';
 import InvitationUpload from '../invitation/InvitationUpload';
 import Timeline from '../timeline/Timeline';
 import TableList from '../tables/TableList';
+import GuestList from '../guests/GuestList';
+import FormBuilder from '../form-builder/FormBuilder';
+import VendorList from '../vendors/VendorList';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -54,6 +57,7 @@ const languages = [
 const WeddingDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [wedding, setWedding] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -71,6 +75,10 @@ const WeddingDetails = () => {
         setWedding(response.wedding);
         setEditData(response.wedding);
         setError(null);
+        if (location.state?.startEditing) {
+          setIsEditing(true);
+          navigate(location.pathname, { replace: true });
+        }
       } catch (err) {
         setError(err.message || 'Failed to fetch wedding details');
       } finally {
@@ -79,7 +87,7 @@ const WeddingDetails = () => {
     };
 
     fetchWedding();
-  }, [id]);
+  }, [id, location.state, navigate, location.pathname]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -127,13 +135,7 @@ const WeddingDetails = () => {
   };
 
   const handleTabChange = (event, newValue) => {
-    if (newValue === 'guests') {
-      navigate(`/weddings/${id}/guests`);
-    } else if (newValue === 'rsvp-form') {
-      navigate(`/weddings/${id}/rsvp-form`);
-    } else {
-      setActiveTab(newValue);
-    }
+    setActiveTab(newValue);
   };
 
   const handleInvitationUploadSuccess = async () => {
@@ -246,6 +248,12 @@ const WeddingDetails = () => {
                 label="Timeline"
                 value="timeline"
                 icon={<EventIcon />}
+                iconPosition="start"
+              />
+              <Tab
+                label="Vendors"
+                value="vendors"
+                icon={<PeopleIcon />}
                 iconPosition="start"
               />
               <Tab
@@ -421,8 +429,20 @@ const WeddingDetails = () => {
               <Timeline weddingId={wedding.id} />
             )}
 
+            {activeTab === 'vendors' && (
+              <VendorList weddingId={wedding.id} />
+            )}
+
+            {activeTab === 'guests' && (
+              <GuestList weddingId={wedding.id} />
+            )}
+
             {activeTab === 'tables' && (
               <TableList weddingId={wedding.id} />
+            )}
+
+            {activeTab === 'rsvp-form' && (
+              <FormBuilder weddingId={wedding.id} />
             )}
 
             {activeTab === 'invitation' && (

@@ -103,13 +103,9 @@ class WeddingController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_wedding_update', methods: ['PUT'])]
+    #[IsGranted('edit', subject: 'wedding')]
     public function update(Wedding $wedding, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
-        // Check if user is the admin of this wedding
-        if ($wedding->getAdmin() !== $this->getUser()) {
-            return $this->json(['message' => 'Access denied'], Response::HTTP_FORBIDDEN);
-        }
-
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['title'])) {
