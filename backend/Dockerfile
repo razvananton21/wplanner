@@ -37,11 +37,8 @@ RUN mkdir -p var/cache var/log config/jwt public \
 # Set up Symfony for production
 ENV APP_ENV=prod
 ENV APP_DEBUG=1
-ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
-ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV APP_RUNTIME=App\\Runtime\\CustomRuntime
-ENV SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL
 
 # Copy composer files first
 COPY composer.json composer.lock ./
@@ -53,9 +50,9 @@ RUN composer install --prefer-dist --no-dev --no-scripts --no-progress --no-inte
 COPY . .
 
 # Generate JWT keys with proper permissions
-RUN set -x \
-    && openssl genrsa -passout pass:wedding2025 -out config/jwt/private.pem -aes256 4096 \
-    && openssl rsa -passin pass:wedding2025 -in config/jwt/private.pem -pubout -out config/jwt/public.pem \
+RUN mkdir -p config/jwt \
+    && openssl genrsa -passout pass:${JWT_PASSPHRASE:-wedding2025} -out config/jwt/private.pem -aes256 4096 \
+    && openssl rsa -passin pass:${JWT_PASSPHRASE:-wedding2025} -in config/jwt/private.pem -pubout -out config/jwt/public.pem \
     && chmod 644 config/jwt/private.pem config/jwt/public.pem \
     && chown -R www-data:www-data config/jwt
 
@@ -70,7 +67,10 @@ RUN echo "Listen \${PORT:-80}" > /etc/apache2/ports.conf
 RUN echo "display_errors=1\n\
 log_errors=1\n\
 error_reporting=E_ALL\n\
-error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
+error_log=/var/log/apache2/php_errors.log\n\
+memory_limit=256M\n\
+upload_max_filesize=64M\n\
+post_max_size=64M" > /usr/local/etc/php/conf.d/error-logging.ini
 
 # Ensure proper permissions for the entire application
 RUN chown -R www-data:www-data . \
@@ -78,32 +78,23 @@ RUN chown -R www-data:www-data . \
     && chmod -R 777 var \
     && chmod -R 777 public
 
-# Create empty .env file to satisfy Symfony
-RUN touch .env && echo "APP_ENV=prod" > .env
-
-# Dump autoload and clear cache with environment variables set
-RUN APP_ENV=prod \
-    APP_DEBUG=0 \
-    SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL \
-    composer dump-autoload --classmap-authoritative --no-dev \
-    && APP_ENV=prod \
-       APP_DEBUG=0 \
-       SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL \
-       php bin/console cache:clear --env=prod --no-debug \
-    && APP_ENV=prod \
-       APP_DEBUG=0 \
-       SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL \
-       php bin/console cache:warmup --env=prod --no-debug \
-    && chown -R www-data:www-data var
-
-# Create start script that handles port configuration
+# Create start script that handles environment setup and Apache start
 RUN echo '#!/bin/bash\n\
-echo "Debug: Starting application..." >> /var/log/apache2/error.log\n\
-echo "APP_ENV=$APP_ENV" >> /var/log/apache2/error.log\n\
-echo "SYMFONY_DOTENV_VARS=$SYMFONY_DOTENV_VARS" >> /var/log/apache2/error.log\n\
-echo "DocumentRoot: $(ls -la /var/www/html/public)" >> /var/log/apache2/error.log\n\
-echo "Apache Config: $(cat /etc/apache2/sites-available/000-default.conf)" >> /var/log/apache2/error.log\n\
+\n\
+# Update ports.conf with actual PORT\n\
 sed -i "s/\${PORT:-80}/$PORT/g" /etc/apache2/ports.conf\n\
+\n\
+# Ensure proper permissions\n\
+chown -R www-data:www-data /var/www/html\n\
+chmod -R 755 /var/www/html\n\
+chmod -R 777 /var/www/html/var\n\
+chmod -R 777 /var/www/html/public\n\
+\n\
+# Clear and warmup cache\n\
+php bin/console cache:clear --env=prod --no-debug\n\
+php bin/console cache:warmup --env=prod --no-debug\n\
+\n\
+# Start Apache\n\
 apache2-foreground' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
 
