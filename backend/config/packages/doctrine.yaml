@@ -1,6 +1,11 @@
 doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
+        types:
+            json: Doctrine\DBAL\Types\JsonType
+        mapping_types:
+            json: string
+            jsonb: string
 
     orm:
         auto_generate_proxy_classes: true
