@@ -25,17 +25,6 @@ services:
       - key: GOOGLE_CALLBACK_URL
         value: https://wplanner-frontend.onrender.com/api/auth/google/callback
 
-  # Frontend service
-  - type: web
-    name: wplanner-frontend
-    runtime: docker
-    dockerfilePath: ./frontend/Dockerfile
-    plan: free
-    buildCommand: docker build --file ./frontend/Dockerfile ./frontend
-    envVars:
-      - key: VITE_API_URL
-        value: https://wplanner-backend.onrender.com
-
 databases:
   - name: wplanner-db
     databaseName: wplanner
