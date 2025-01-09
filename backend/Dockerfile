@@ -39,21 +39,10 @@ ENV APP_DEBUG=0
 ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
 ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV APP_RUNTIME=App\\Runtime\\CustomRuntime
 
 # Copy composer files first
 COPY composer.json composer.lock ./
-
-# Create production environment files
-RUN echo "APP_ENV=prod" > .env && \
-    echo "APP_DEBUG=0" >> .env && \
-    echo "APP_SECRET=${APP_SECRET}" >> .env && \
-    echo "DATABASE_URL=${DATABASE_URL}" >> .env && \
-    echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env && \
-    echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env && \
-    echo "JWT_PASSPHRASE=wedding2025" >> .env
-
-# Create .env.local with production values
-RUN cp .env .env.local
 
 # Install dependencies
 RUN composer install --prefer-dist --no-dev --no-scripts --no-progress --no-interaction
@@ -87,9 +76,6 @@ RUN chown -R www-data:www-data . \
     && chmod -R 777 var \
     && chmod -R 777 public
 
-# Dump env file for production
-RUN composer dump-env prod
-
 # Dump autoload and clear cache
 RUN composer dump-autoload --classmap-authoritative --no-dev \
     && php bin/console cache:clear --env=prod --no-debug \
@@ -98,6 +84,8 @@ RUN composer dump-autoload --classmap-authoritative --no-dev \
 
 # Create start script that handles port configuration
 RUN echo '#!/bin/bash\n\
+echo "Debug: Starting application..." >> /var/log/apache2/error.log\n\
+echo "APP_ENV=$APP_ENV" >> /var/log/apache2/error.log\n\
 sed -i "s/\${PORT:-80}/$PORT/g" /etc/apache2/ports.conf\n\
 apache2-foreground' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
