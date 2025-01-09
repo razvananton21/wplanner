@@ -36,14 +36,24 @@ RUN mkdir -p var/cache var/log config/jwt public \
 # Set up Symfony for production
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
+ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
+ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Copy composer files first
 COPY composer.json composer.lock ./
 
-# Copy environment files
-COPY .env .env
-COPY .env.prod .env.local
+# Create production environment files
+RUN echo "APP_ENV=prod" > .env && \
+    echo "APP_DEBUG=0" >> .env && \
+    echo "APP_SECRET=${APP_SECRET}" >> .env && \
+    echo "DATABASE_URL=${DATABASE_URL}" >> .env && \
+    echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env && \
+    echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env && \
+    echo "JWT_PASSPHRASE=wedding2025" >> .env
+
+# Create .env.local with production values
+RUN cp .env .env.local
 
 # Install dependencies
 RUN composer install --prefer-dist --no-dev --no-scripts --no-progress --no-interaction
