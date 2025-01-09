@@ -33,6 +33,7 @@ ENV APP_ENV=prod
 ENV APP_DEBUG=0
 ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
 ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Create necessary directories
 RUN mkdir -p var/cache var/log config/jwt
@@ -40,15 +41,15 @@ RUN mkdir -p var/cache var/log config/jwt
 # Copy the entire application
 COPY . .
 
-# Set permissions
-RUN chown -R www-data:www-data .
-RUN chmod -R 777 var config/jwt
+# Set initial permissions
+RUN chown -R www-data:www-data . \
+    && chmod -R 777 var config/jwt \
+    && chmod +x bin/console
 
 # Install dependencies for production
 RUN composer install --prefer-dist --no-dev --no-progress --no-scripts --no-interaction \
     && composer dump-autoload --classmap-authoritative --no-dev \
-    && composer clear-cache \
-    && chmod +x bin/console
+    && composer clear-cache
 
 # Generate JWT keys
 RUN set -e; \
@@ -73,9 +74,8 @@ RUN echo "display_errors=0\n" \
 
 # Final permissions and cache warmup
 RUN chown -R www-data:www-data . \
-    && chmod +x bin/console \
-    && php bin/console cache:clear --env=prod --no-debug --no-warmup \
-    && php bin/console cache:warmup --env=prod --no-debug
+    && su www-data -s /bin/sh -c 'php bin/console cache:clear --env=prod --no-debug --no-warmup' \
+    && su www-data -s /bin/sh -c 'php bin/console cache:warmup --env=prod --no-debug'
 
 EXPOSE 80
 
