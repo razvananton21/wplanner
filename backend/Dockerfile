@@ -43,6 +43,9 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # Copy composer files first
 COPY composer.json composer.lock ./
 
+# Create empty .env file
+RUN touch .env && chmod 644 .env
+
 # Install dependencies
 RUN composer install --prefer-dist --no-dev --no-scripts --no-progress --no-interaction
 
@@ -69,10 +72,13 @@ log_errors=1\n\
 error_reporting=E_ALL\n\
 error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
 
+# Ensure empty .env file exists and has correct permissions
+RUN touch .env && chmod 644 .env && chown www-data:www-data .env
+
 # Dump autoload and clear cache
 RUN composer dump-autoload --classmap-authoritative --no-dev \
-    && php bin/console cache:clear --env=prod --no-debug \
-    && php bin/console cache:warmup --env=prod --no-debug \
+    && APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear --env=prod --no-debug \
+    && APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --env=prod --no-debug \
     && chown -R www-data:www-data var
 
 # Create start script that handles port configuration
