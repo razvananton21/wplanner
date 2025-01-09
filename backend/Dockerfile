@@ -85,7 +85,7 @@ COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Configure Apache for port
-RUN echo "Listen \${PORT:-80}" > /etc/apache2/ports.conf
+RUN echo "Listen \${PORT}" > /etc/apache2/ports.conf
 
 # Configure PHP for production with error logging
 RUN echo "display_errors=1\n\
@@ -122,16 +122,22 @@ RUN echo '#!/bin/bash\n\
 echo "Debug: Starting application..." >> /var/log/apache2/error.log\n\
 echo "APP_ENV=$APP_ENV" >> /var/log/apache2/error.log\n\
 echo "SYMFONY_DOTENV_VARS=$SYMFONY_DOTENV_VARS" >> /var/log/apache2/error.log\n\
+echo "PORT=$PORT" >> /var/log/apache2/error.log\n\
 echo "DocumentRoot: $(ls -la /var/www/html/public)" >> /var/log/apache2/error.log\n\
 echo "Apache Config: $(cat /etc/apache2/sites-available/000-default.conf)" >> /var/log/apache2/error.log\n\
 echo "PHP Modules: $(php -m)" >> /var/log/apache2/error.log\n\
 echo "PHP Version: $(php -v)" >> /var/log/apache2/error.log\n\
-echo "PHP Config: $(php -i)" >> /var/log/apache2/error.log\n\
-sed -i "s/\${PORT:-80}/$PORT/g" /etc/apache2/ports.conf\n\
+echo "Apache Ports: $(cat /etc/apache2/ports.conf)" >> /var/log/apache2/error.log\n\
+echo "Testing PHP file:" >> /var/log/apache2/error.log\n\
+echo "<?php phpinfo(); ?>" > /var/www/html/public/test.php\n\
+chown www-data:www-data /var/www/html/public/test.php\n\
+chmod 755 /var/www/html/public/test.php\n\
+sed -i "s/\${PORT}/$PORT/g" /etc/apache2/ports.conf\n\
+sed -i "s/\${PORT}/$PORT/g" /etc/apache2/sites-available/000-default.conf\n\
 apache2-foreground' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
 
-EXPOSE 80
-ENV PORT=80
+EXPOSE ${PORT}
+ENV PORT=10000
 
 CMD ["/usr/local/bin/start.sh"]
