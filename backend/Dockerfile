@@ -33,7 +33,9 @@ COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 COPY . .
 
 # Install dependencies
-RUN composer install --no-interaction
+RUN composer install --no-interaction --no-scripts
+RUN php bin/console cache:clear
+RUN php bin/console assets:install
 
 # Generate JWT keys
 RUN set -e; \
