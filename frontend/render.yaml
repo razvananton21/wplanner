@@ -1,0 +1,8 @@
+services:
+  - type: static
+    name: wplanner-frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://wplanner-backend.onrender.com 

@@ -1,30 +1,19 @@
-FROM node:18-alpine as base
-
-# Set working directory
-WORKDIR /app
-
 # Build stage
-FROM base as builder
-# Copy package files first
-COPY package.json package-lock.json ./
+FROM node:18-alpine as builder
+WORKDIR /build
+# Copy only package files first
+COPY package*.json ./
 RUN npm ci
-# Then copy the rest of the files
+# Copy source files
 COPY . .
+# Build the app
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine as production
+FROM nginx:alpine
 # Copy built files
-COPY --from=builder /app/dist /usr/share/nginx/html
-# Copy nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-# Create a directory for nginx to write runtime files
-RUN mkdir -p /var/run/nginx && \
-    mkdir -p /var/cache/nginx && \
-    chown -R nginx:nginx /var/run/nginx && \
-    chown -R nginx:nginx /var/cache/nginx && \
-    chown -R nginx:nginx /usr/share/nginx/html
-# Switch to non-root user
-USER nginx
+COPY --from=builder /build/dist /usr/share/nginx/html
+# Copy nginx config from host
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"] 

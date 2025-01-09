@@ -31,6 +31,7 @@ services:
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
     plan: free
+    buildCommand: docker build --file ./frontend/Dockerfile ./frontend
     envVars:
       - key: VITE_API_URL
         value: https://wplanner-backend.onrender.com
