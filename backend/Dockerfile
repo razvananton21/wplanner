@@ -28,16 +28,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first
-COPY composer.json composer.lock ./
-
-# Install dependencies with dev dependencies for local development
-RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader \
-    && COMPOSER_ALLOW_SUPERUSER=1 composer clear-cache \
-    && COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload --optimize
-
-# Copy the rest of the application
+# Copy the entire application
 COPY . .
+
+# Install dependencies for production
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader \
+    && composer clear-cache \
+    && composer dump-autoload --optimize \
+    && php bin/console cache:clear --env=prod --no-debug \
+    && php bin/console cache:warmup --env=prod --no-debug
 
 # Copy Apache configuration
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
@@ -68,11 +67,6 @@ RUN echo "Listen 80" > /etc/apache2/ports.conf
 RUN echo "display_errors=0\n" \
     "log_errors=1\n" \
     "error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
-
-# Clear cache and warmup for production
-RUN php bin/console cache:clear --env=prod --no-debug \
-    && php bin/console cache:warmup --env=prod --no-debug \
-    && chown -R www-data:www-data var
 
 EXPOSE 80
 
