@@ -33,32 +33,31 @@ ENV APP_ENV=prod
 ENV APP_DEBUG=0
 ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
 ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
-# Create necessary directories
-RUN mkdir -p var/cache var/log config/jwt
 
 # Copy the entire application
 COPY . .
 
-# Set initial permissions
-RUN chown -R www-data:www-data . \
-    && chmod -R 777 var config/jwt \
-    && chmod +x bin/console
-
 # Install dependencies for production
-RUN composer install --prefer-dist --no-dev --no-progress --no-scripts --no-interaction \
-    && composer dump-autoload --classmap-authoritative --no-dev \
-    && composer clear-cache
+RUN set -eux; \
+    mkdir -p var/cache var/log; \
+    composer install --prefer-dist --no-dev --no-progress --no-scripts --no-interaction; \
+    composer dump-autoload --classmap-authoritative --no-dev; \
+    composer clear-cache; \
+    chmod +x bin/console; sync
+
+# Copy Apache configuration
+COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
+
+# Create necessary directories with correct permissions
+RUN mkdir -p var/cache var/log config/jwt \
+    && chown -R www-data:www-data var config/jwt \
+    && chmod -R 777 var config/jwt
 
 # Generate JWT keys
 RUN set -e; \
     openssl genrsa -aes256 -passout pass:wedding2025 -out config/jwt/private.pem 4096; \
     openssl rsa -pubout -in config/jwt/private.pem -passin pass:wedding2025 -out config/jwt/public.pem; \
     chmod 644 config/jwt/private.pem config/jwt/public.pem
-
-# Copy Apache configuration
-COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Set default environment variables
 ENV PORT=80
@@ -72,10 +71,11 @@ RUN echo "display_errors=0\n" \
     "log_errors=1\n" \
     "error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
 
-# Final permissions and cache warmup
-RUN chown -R www-data:www-data . \
-    && su www-data -s /bin/sh -c 'php bin/console cache:clear --env=prod --no-debug --no-warmup' \
-    && su www-data -s /bin/sh -c 'php bin/console cache:warmup --env=prod --no-debug'
+# Warm up cache as www-data
+RUN set -eux; \
+    chown -R www-data:www-data .; \
+    su www-data -s /bin/sh -c "APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear --no-warmup"; \
+    su www-data -s /bin/sh -c "APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup"
 
 EXPOSE 80
 
