@@ -1,9 +1,9 @@
 <?php
 
-use App\Kernel;
+error_log('Debug: Request received - URI: ' . $_SERVER['REQUEST_URI']);
+error_log('Debug: Environment: ' . ($_SERVER['APP_ENV'] ?? 'undefined'));
 
-// Debug line to verify changes
-error_log('Debug: Starting application with custom configuration');
+use App\Kernel;
 
 // Force environment variables
 $_SERVER['APP_ENV'] = $_ENV['APP_ENV'] = 'prod';
@@ -14,13 +14,13 @@ $_SERVER['DATABASE_URL'] = $_ENV['DATABASE_URL'] = 'postgresql://app:!ChangeMe!@
 // Prevent Dotenv from loading .env file
 putenv('SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL');
 
-error_log('Debug: Environment variables set: ' . getenv('APP_ENV'));
+error_log('Debug: Environment variables set');
 
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 
+error_log('Debug: Runtime loaded');
+
 return function (array $context) {
-    // Debug line to verify context
-    error_log('Debug: Runtime context initialized with APP_ENV=' . ($context['APP_ENV'] ?? 'undefined'));
-    
+    error_log('Debug: Creating kernel with context: ' . json_encode($context));
     return new Kernel($context['APP_ENV'] ?? 'prod', (bool) ($context['APP_DEBUG'] ?? false));
 };
