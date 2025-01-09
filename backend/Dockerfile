@@ -40,6 +40,7 @@ ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
 ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV APP_RUNTIME=App\\Runtime\\CustomRuntime
+ENV SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL
 
 # Copy composer files first
 COPY composer.json composer.lock ./
@@ -76,16 +77,29 @@ RUN chown -R www-data:www-data . \
     && chmod -R 777 var \
     && chmod -R 777 public
 
-# Dump autoload and clear cache
-RUN composer dump-autoload --classmap-authoritative --no-dev \
-    && php bin/console cache:clear --env=prod --no-debug \
-    && php bin/console cache:warmup --env=prod --no-debug \
+# Create empty .env file to satisfy Symfony
+RUN touch .env && echo "APP_ENV=prod" > .env
+
+# Dump autoload and clear cache with environment variables set
+RUN APP_ENV=prod \
+    APP_DEBUG=0 \
+    SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL \
+    composer dump-autoload --classmap-authoritative --no-dev \
+    && APP_ENV=prod \
+       APP_DEBUG=0 \
+       SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL \
+       php bin/console cache:clear --env=prod --no-debug \
+    && APP_ENV=prod \
+       APP_DEBUG=0 \
+       SYMFONY_DOTENV_VARS=APP_ENV,APP_DEBUG,APP_SECRET,DATABASE_URL \
+       php bin/console cache:warmup --env=prod --no-debug \
     && chown -R www-data:www-data var
 
 # Create start script that handles port configuration
 RUN echo '#!/bin/bash\n\
 echo "Debug: Starting application..." >> /var/log/apache2/error.log\n\
 echo "APP_ENV=$APP_ENV" >> /var/log/apache2/error.log\n\
+echo "SYMFONY_DOTENV_VARS=$SYMFONY_DOTENV_VARS" >> /var/log/apache2/error.log\n\
 sed -i "s/\${PORT:-80}/$PORT/g" /etc/apache2/ports.conf\n\
 apache2-foreground' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
