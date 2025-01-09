@@ -41,6 +41,12 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # Copy the entire application
 COPY . .
 
+# Create .env file with production values
+RUN echo "APP_ENV=prod" > .env && \
+    echo "APP_DEBUG=0" >> .env && \
+    echo "APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8" >> .env && \
+    echo "DATABASE_URL=postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8" >> .env
+
 # Create a minimal .env.local.php for production
 RUN echo "<?php return array(" > .env.local.php && \
     echo "'APP_ENV' => 'prod'," >> .env.local.php && \
@@ -52,6 +58,7 @@ RUN echo "<?php return array(" > .env.local.php && \
 # Set initial permissions
 RUN chown -R www-data:www-data . \
     && chmod -R 777 var config/jwt \
+    && chmod 644 .env .env.local.php \
     && chmod +x bin/console
 
 # Install dependencies for production
