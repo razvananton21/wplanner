@@ -43,5 +43,16 @@ memory_limit=256M\n\
 upload_max_filesize=64M\n\
 post_max_size=64M' > /usr/local/etc/php/conf.d/custom.ini
 
-# Use port from environment
-CMD sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf && apache2-foreground
+# Create startup script
+RUN echo '#!/bin/bash\n\
+# Update Apache port\n\
+sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf\n\
+\n\
+# Run migrations\n\
+php bin/console doctrine:migrations:migrate --no-interaction\n\
+\n\
+# Start Apache\n\
+apache2-foreground' > /usr/local/bin/start.sh \
+    && chmod +x /usr/local/bin/start.sh
+
+CMD ["/usr/local/bin/start.sh"]
