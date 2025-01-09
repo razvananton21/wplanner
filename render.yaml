@@ -6,6 +6,8 @@ services:
     dockerfilePath: ./backend/Dockerfile
     plan: free
     envVars:
+      - key: PORT
+        value: 10000
       - key: DATABASE_URL
         fromDatabase:
           name: wplanner-db
@@ -34,6 +36,8 @@ services:
     dockerfilePath: ./frontend/Dockerfile
     plan: free
     envVars:
+      - key: PORT
+        value: 10001
       - key: VITE_API_URL
         value: https://wplanner-backend-app.onrender.com
 
