@@ -1,13 +1,24 @@
 FROM php:8.2-apache
 
-# Install essentials
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libpq-dev \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo_pgsql \
-    && a2enmod rewrite \
-    && apt-get clean
+    openssl
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite headers
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -15,44 +26,26 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files and install dependencies
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-progress
+# Copy Apache configuration
+COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
-# Copy application
+# Copy existing application directory
 COPY . .
 
-# Apache configuration
-RUN echo '\
-<VirtualHost *:80>\n\
-    DocumentRoot /var/www/html/public\n\
-    DirectoryIndex index.php\n\
-    <Directory /var/www/html/public>\n\
-        AllowOverride None\n\
-        Require all granted\n\
-        FallbackResource /index.php\n\
-    </Directory>\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+# Install dependencies
+RUN composer install --no-interaction
+
+# Generate JWT keys
+RUN set -e; \
+    mkdir -p config/jwt; \
+    openssl genrsa -aes256 -passout pass:wedding2025 -out config/jwt/private.pem 4096; \
+    openssl rsa -pubout -in config/jwt/private.pem -passin pass:wedding2025 -out config/jwt/public.pem; \
+    chmod 644 config/jwt/private.pem config/jwt/public.pem
 
 # Set permissions
-RUN chown -R www-data:www-data var
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/var
 
-# Configure PHP
-RUN echo '\
-memory_limit=256M\n\
-upload_max_filesize=64M\n\
-post_max_size=64M' > /usr/local/etc/php/conf.d/custom.ini
+EXPOSE 80
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-# Update Apache port\n\
-sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf\n\
-\n\
-# Run migrations\n\
-php bin/console doctrine:migrations:migrate --no-interaction\n\
-\n\
-# Start Apache\n\
-apache2-foreground' > /usr/local/bin/start.sh \
-    && chmod +x /usr/local/bin/start.sh
-
-CMD ["/usr/local/bin/start.sh"]
+CMD ["apache2-foreground"] 
