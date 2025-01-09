@@ -3,17 +3,16 @@ FROM node:18-alpine as base
 # Set working directory
 WORKDIR /app
 
-# Add package files
-COPY package*.json ./
-
 # Development stage
 FROM base as development
+COPY package*.json ./
 RUN npm install
 COPY . .
 CMD ["npm", "run", "dev"]
 
 # Build stage
 FROM base as builder
+COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
