@@ -11,21 +11,9 @@ services:
           name: wplanner-db
           property: connectionString
       - key: APP_SECRET
-        generateValue: true
+        value: 2ca64f8d83b9e89f5f19d672841d6bb8
       - key: JWT_PASSPHRASE
-        generateValue: true
-      - key: APP_URL
-        value: https://wplanner-frontend-app.onrender.com
-      - key: CORS_ALLOW_ORIGIN
-        value: https://wplanner-frontend-app.onrender.com
-      - key: MAILER_DSN
-        value: smtp://smtp.sendgrid.net:587
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: GOOGLE_CALLBACK_URL
-        value: https://wplanner-frontend-app.onrender.com/api/auth/google/callback
+        value: wedding2025
 
   # Frontend service
   - type: web
