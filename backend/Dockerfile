@@ -28,22 +28,25 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
+# Set up Symfony for production
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
+ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
+ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+
 # Copy the entire application
 COPY . .
 
 # Install dependencies for production
-RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader \
-    && composer clear-cache \
-    && composer dump-autoload --optimize \
-    && php bin/console cache:clear --env=prod --no-debug \
-    && php bin/console cache:warmup --env=prod --no-debug
+RUN set -eux; \
+    mkdir -p var/cache var/log; \
+    composer install --prefer-dist --no-dev --no-progress --no-scripts --no-interaction; \
+    composer dump-autoload --classmap-authoritative --no-dev; \
+    composer clear-cache; \
+    chmod +x bin/console; sync
 
 # Copy Apache configuration
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
-
-# Set up Symfony for production
-ENV APP_ENV=prod
-ENV APP_DEBUG=0
 
 # Create necessary directories with correct permissions
 RUN mkdir -p var/cache var/log config/jwt \
@@ -67,6 +70,12 @@ RUN echo "Listen 80" > /etc/apache2/ports.conf
 RUN echo "display_errors=0\n" \
     "log_errors=1\n" \
     "error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
+
+# Warm up cache as www-data
+RUN set -eux; \
+    chown -R www-data:www-data .; \
+    su www-data -s /bin/sh -c "APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear --no-warmup"; \
+    su www-data -s /bin/sh -c "APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup"
 
 EXPOSE 80
 
