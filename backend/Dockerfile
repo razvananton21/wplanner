@@ -33,10 +33,17 @@ COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 COPY . .
 
 # Install dependencies
-RUN composer install --no-interaction --no-scripts
-RUN composer require symfony/runtime
-RUN php bin/console cache:clear
-RUN php bin/console assets:install
+RUN composer install --no-interaction --no-scripts --no-plugins \
+    && composer require symfony/runtime --no-interaction --no-scripts --no-plugins \
+    && composer dump-autoload --optimize --no-scripts --no-plugins
+
+# Set up Symfony
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
+RUN mkdir -p var/cache var/log \
+    && php bin/console cache:clear --no-warmup \
+    && php bin/console cache:warmup \
+    && php bin/console assets:install
 
 # Generate JWT keys
 RUN set -e; \
