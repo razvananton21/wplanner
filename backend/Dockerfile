@@ -31,8 +31,8 @@ WORKDIR /var/www/html
 # Copy composer files first
 COPY composer.json composer.lock ./
 
-# Install dependencies
-RUN composer install --no-dev --no-interaction --no-scripts --no-plugins \
+# Install dependencies with dev dependencies for local development
+RUN composer install --no-interaction --no-scripts --no-plugins \
     && composer require symfony/runtime --no-interaction --no-scripts --no-plugins \
     && composer dump-autoload --optimize --no-scripts --no-plugins
 
@@ -42,9 +42,9 @@ COPY . .
 # Copy Apache configuration
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
-# Set up Symfony
-ENV APP_ENV=prod
-ENV APP_DEBUG=0
+# Set up Symfony for development by default
+ENV APP_ENV=dev
+ENV APP_DEBUG=1
 
 # Create necessary directories with correct permissions
 RUN mkdir -p var/cache var/log config/jwt \
@@ -57,13 +57,23 @@ RUN set -e; \
     openssl rsa -pubout -in config/jwt/private.pem -passin pass:wedding2025 -out config/jwt/public.pem; \
     chmod 644 config/jwt/private.pem config/jwt/public.pem
 
-# Configure Apache for port
-RUN echo "Listen \${PORT:-80}" > /etc/apache2/ports.conf
-
 # Set default environment variables
 ENV PORT=80
 ENV SERVER_NAME=localhost
 
+# Configure Apache for port
+RUN echo "Listen 80" > /etc/apache2/ports.conf
+
+# Configure PHP for development
+RUN echo "display_errors=1\n" \
+    "error_reporting=E_ALL\n" \
+    "log_errors=1\n" \
+    "error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
+
 EXPOSE 80
 
-CMD ["apache2-foreground"] 
+# Use a shell script to update ports.conf and start Apache
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+CMD ["/usr/local/bin/start.sh"] 
