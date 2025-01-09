@@ -46,10 +46,9 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://backend:80',
+        target: 'http://backend',
         changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        secure: false
       },
     },
   },

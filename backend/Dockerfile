@@ -21,28 +21,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache modules
 RUN a2enmod rewrite headers
-
-# Configure PHP
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-RUN echo "\
-date.timezone=UTC\n\
-memory_limit=256M\n\
-max_execution_time=30\n\
-post_max_size=20M\n\
-upload_max_filesize=20M\n\
-display_errors=On\n\
-display_startup_errors=On\n\
-error_reporting=E_ALL\n\
-log_errors=On\n\
-error_log=/var/log/apache2/php_errors.log\n\
-opcache.enable=1\n\
-opcache.memory_consumption=256\n\
-opcache.max_accelerated_files=20000\n\
-opcache.validate_timestamps=0\n\
-realpath_cache_size=4096K\n\
-realpath_cache_ttl=600\n\
-session.gc_maxlifetime=3600\n\
-" > /usr/local/etc/php/conf.d/app.ini
+RUN a2enmod rewrite
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -57,7 +36,7 @@ RUN mkdir -p var/cache var/log config/jwt public \
 
 # Set up Symfony for production
 ENV APP_ENV=prod
-ENV APP_DEBUG=0
+ENV APP_DEBUG=1
 ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
 ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -85,7 +64,7 @@ COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Configure Apache for port
-RUN echo "Listen \${PORT}" > /etc/apache2/ports.conf
+RUN echo "Listen \${PORT:-80}" > /etc/apache2/ports.conf
 
 # Configure PHP for production with error logging
 RUN echo "display_errors=1\n\
@@ -122,22 +101,13 @@ RUN echo '#!/bin/bash\n\
 echo "Debug: Starting application..." >> /var/log/apache2/error.log\n\
 echo "APP_ENV=$APP_ENV" >> /var/log/apache2/error.log\n\
 echo "SYMFONY_DOTENV_VARS=$SYMFONY_DOTENV_VARS" >> /var/log/apache2/error.log\n\
-echo "PORT=$PORT" >> /var/log/apache2/error.log\n\
 echo "DocumentRoot: $(ls -la /var/www/html/public)" >> /var/log/apache2/error.log\n\
 echo "Apache Config: $(cat /etc/apache2/sites-available/000-default.conf)" >> /var/log/apache2/error.log\n\
-echo "PHP Modules: $(php -m)" >> /var/log/apache2/error.log\n\
-echo "PHP Version: $(php -v)" >> /var/log/apache2/error.log\n\
-echo "Apache Ports: $(cat /etc/apache2/ports.conf)" >> /var/log/apache2/error.log\n\
-echo "Testing PHP file:" >> /var/log/apache2/error.log\n\
-echo "<?php phpinfo(); ?>" > /var/www/html/public/test.php\n\
-chown www-data:www-data /var/www/html/public/test.php\n\
-chmod 755 /var/www/html/public/test.php\n\
-sed -i "s/\${PORT}/$PORT/g" /etc/apache2/ports.conf\n\
-sed -i "s/\${PORT}/$PORT/g" /etc/apache2/sites-available/000-default.conf\n\
+sed -i "s/\${PORT:-80}/$PORT/g" /etc/apache2/ports.conf\n\
 apache2-foreground' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
 
-EXPOSE ${PORT}
-ENV PORT=10000
+EXPOSE 80
+ENV PORT=80
 
 CMD ["/usr/local/bin/start.sh"]
