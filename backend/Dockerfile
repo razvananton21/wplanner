@@ -19,8 +19,9 @@ RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache mod_rewrite
+# Enable Apache modules
 RUN a2enmod rewrite headers
+RUN a2enmod rewrite
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -100,6 +101,8 @@ RUN echo '#!/bin/bash\n\
 echo "Debug: Starting application..." >> /var/log/apache2/error.log\n\
 echo "APP_ENV=$APP_ENV" >> /var/log/apache2/error.log\n\
 echo "SYMFONY_DOTENV_VARS=$SYMFONY_DOTENV_VARS" >> /var/log/apache2/error.log\n\
+echo "DocumentRoot: $(ls -la /var/www/html/public)" >> /var/log/apache2/error.log\n\
+echo "Apache Config: $(cat /etc/apache2/sites-available/000-default.conf)" >> /var/log/apache2/error.log\n\
 sed -i "s/\${PORT:-80}/$PORT/g" /etc/apache2/ports.conf\n\
 apache2-foreground' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
