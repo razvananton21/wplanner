@@ -29,8 +29,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # Create necessary directories with proper permissions
-RUN mkdir -p var/cache var/log config/jwt \
-    && chown -R www-data:www-data var config/jwt \
+RUN mkdir -p var/cache var/log config/jwt public \
+    && chown -R www-data:www-data var config/jwt public \
     && chmod -R 777 var config/jwt
 
 # Set up Symfony for production
@@ -72,11 +72,14 @@ log_errors=1\n\
 error_reporting=E_ALL\n\
 error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
 
-# Ensure empty .env file exists and has correct permissions
-RUN touch .env && chmod 644 .env && chown www-data:www-data .env
+# Ensure proper permissions for the entire application
+RUN chown -R www-data:www-data . \
+    && chmod -R 755 . \
+    && chmod -R 777 var \
+    && chmod -R 777 public
 
 # Dump autoload and clear cache
-RUN composer dump-autoload --classmap-authoritative --no-dev \
+RUN APP_ENV=prod APP_DEBUG=0 composer dump-autoload --classmap-authoritative --no-dev \
     && APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear --env=prod --no-debug \
     && APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --env=prod --no-debug \
     && chown -R www-data:www-data var
