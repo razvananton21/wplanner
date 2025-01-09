@@ -36,15 +36,14 @@ RUN mkdir -p var/cache var/log config/jwt public \
 # Set up Symfony for production
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
-ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
-ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Copy composer files first
 COPY composer.json composer.lock ./
 
-# Create empty .env file
-RUN touch .env && chmod 644 .env
+# Copy environment files
+COPY .env .env
+COPY .env.prod .env.local
 
 # Install dependencies
 RUN composer install --prefer-dist --no-dev --no-scripts --no-progress --no-interaction
@@ -78,10 +77,13 @@ RUN chown -R www-data:www-data . \
     && chmod -R 777 var \
     && chmod -R 777 public
 
+# Dump env file for production
+RUN composer dump-env prod
+
 # Dump autoload and clear cache
-RUN APP_ENV=prod APP_DEBUG=0 composer dump-autoload --classmap-authoritative --no-dev \
-    && APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear --env=prod --no-debug \
-    && APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --env=prod --no-debug \
+RUN composer dump-autoload --classmap-authoritative --no-dev \
+    && php bin/console cache:clear --env=prod --no-debug \
+    && php bin/console cache:warmup --env=prod --no-debug \
     && chown -R www-data:www-data var
 
 # Create start script that handles port configuration
