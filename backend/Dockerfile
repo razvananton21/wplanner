@@ -31,14 +31,6 @@ WORKDIR /var/www/html
 # Create necessary directories
 RUN mkdir -p var/cache var/log config/jwt
 
-# Copy the entire application
-COPY . .
-
-# Set initial permissions
-RUN chown -R www-data:www-data . \
-    && chmod -R 777 var config/jwt \
-    && chmod +x bin/console
-
 # Set up Symfony for production
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
@@ -46,14 +38,21 @@ ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
 ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Debug environment
-RUN set -x \
-    && php -v \
-    && php -m \
-    && ls -la \
-    && cat .env || true \
-    && echo "Current environment variables:" \
-    && printenv
+# Copy the entire application
+COPY . .
+
+# Create a minimal .env.local.php for production
+RUN echo "<?php return array(" > .env.local.php && \
+    echo "'APP_ENV' => 'prod'," >> .env.local.php && \
+    echo "'APP_DEBUG' => '0'," >> .env.local.php && \
+    echo "'APP_SECRET' => '2ca64f8d83b9e89f5f19d672841d6bb8'," >> .env.local.php && \
+    echo "'DATABASE_URL' => 'postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8'" >> .env.local.php && \
+    echo ");" >> .env.local.php
+
+# Set initial permissions
+RUN chown -R www-data:www-data . \
+    && chmod -R 777 var config/jwt \
+    && chmod +x bin/console
 
 # Install dependencies for production
 RUN set -x \
@@ -82,14 +81,10 @@ RUN echo "display_errors=1\n" \
     "error_reporting=E_ALL\n" \
     "error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
 
-# Verify Symfony setup and warm up cache
+# Final setup and cache warmup
 RUN set -x \
-    && ls -la \
-    && echo "PHP Version:" && php -v \
-    && echo "Symfony Version:" && php bin/console --version || true \
-    && echo "Symfony Environment:" && php bin/console debug:container --env=prod --parameter=kernel.environment || true \
-    && php bin/console cache:clear --env=prod --no-debug --no-warmup --verbose || true \
-    && php bin/console cache:warmup --env=prod --no-debug --verbose || true \
+    && php bin/console cache:clear --env=prod --no-debug --no-warmup \
+    && php bin/console cache:warmup --env=prod --no-debug \
     && chown -R www-data:www-data var
 
 EXPOSE 80
@@ -98,4 +93,4 @@ EXPOSE 80
 COPY docker/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
-CMD ["/usr/local/bin/start.sh"] 
+CMD ["/usr/local/bin/start.sh"]
