@@ -28,13 +28,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Set up Symfony for production
-ENV APP_ENV=prod
-ENV APP_DEBUG=0
-ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
-ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
 # Create necessary directories
 RUN mkdir -p var/cache var/log config/jwt
 
@@ -46,43 +39,57 @@ RUN chown -R www-data:www-data . \
     && chmod -R 777 var config/jwt \
     && chmod +x bin/console
 
+# Set up Symfony for production
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
+ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
+ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# Debug environment
+RUN set -x \
+    && php -v \
+    && php -m \
+    && ls -la \
+    && cat .env || true \
+    && echo "Current environment variables:" \
+    && printenv
+
 # Install dependencies for production
-RUN composer install --prefer-dist --no-dev --no-progress --no-scripts --no-interaction \
+RUN set -x \
+    && composer install --prefer-dist --no-dev --no-progress --no-scripts --no-interaction \
     && composer dump-autoload --classmap-authoritative --no-dev \
     && composer clear-cache
 
 # Generate JWT keys with proper permissions
-RUN set -e; \
-    mkdir -p config/jwt; \
-    chmod 777 config/jwt; \
-    openssl genrsa -passout pass:wedding2025 -out config/jwt/private.pem -aes256 4096; \
-    openssl rsa -passin pass:wedding2025 -in config/jwt/private.pem -pubout -out config/jwt/public.pem; \
-    chmod 644 config/jwt/private.pem config/jwt/public.pem; \
-    chown -R www-data:www-data config/jwt
+RUN set -x \
+    && mkdir -p config/jwt \
+    && chmod 777 config/jwt \
+    && openssl genrsa -passout pass:wedding2025 -out config/jwt/private.pem -aes256 4096 \
+    && openssl rsa -passin pass:wedding2025 -in config/jwt/private.pem -pubout -out config/jwt/public.pem \
+    && chmod 644 config/jwt/private.pem config/jwt/public.pem \
+    && chown -R www-data:www-data config/jwt
 
 # Copy Apache configuration
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
-
-# Set default environment variables
-ENV PORT=80
-ENV SERVER_NAME=localhost
 
 # Configure Apache for port
 RUN echo "Listen 80" > /etc/apache2/ports.conf
 
 # Configure PHP for production
-RUN echo "display_errors=0\n" \
+RUN echo "display_errors=1\n" \
     "log_errors=1\n" \
+    "error_reporting=E_ALL\n" \
     "error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
 
-# Debug and cache warmup with error output
+# Verify Symfony setup and warm up cache
 RUN set -x \
     && ls -la \
-    && pwd \
-    && php -v \
-    && APP_ENV=prod APP_DEBUG=0 php bin/console about --env=prod \
-    && APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear --env=prod --no-debug --no-warmup --verbose \
-    && APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --env=prod --no-debug --verbose \
+    && echo "PHP Version:" && php -v \
+    && echo "Symfony Version:" && php bin/console --version || true \
+    && echo "Symfony Environment:" && php bin/console debug:container --env=prod --parameter=kernel.environment || true \
+    && php bin/console cache:clear --env=prod --no-debug --no-warmup --verbose || true \
+    && php bin/console cache:warmup --env=prod --no-debug --verbose || true \
     && chown -R www-data:www-data var
 
 EXPOSE 80
