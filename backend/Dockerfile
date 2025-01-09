@@ -32,9 +32,9 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 
 # Install dependencies with dev dependencies for local development
-RUN composer install --no-interaction --no-scripts --no-plugins \
-    && composer require symfony/runtime --no-interaction --no-scripts --no-plugins \
-    && composer dump-autoload --optimize --no-scripts --no-plugins
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader \
+    && COMPOSER_ALLOW_SUPERUSER=1 composer clear-cache \
+    && COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload --optimize
 
 # Copy the rest of the application
 COPY . .
@@ -42,9 +42,9 @@ COPY . .
 # Copy Apache configuration
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
-# Set up Symfony for development by default
-ENV APP_ENV=dev
-ENV APP_DEBUG=1
+# Set up Symfony for production
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
 
 # Create necessary directories with correct permissions
 RUN mkdir -p var/cache var/log config/jwt \
@@ -64,11 +64,15 @@ ENV SERVER_NAME=localhost
 # Configure Apache for port
 RUN echo "Listen 80" > /etc/apache2/ports.conf
 
-# Configure PHP for development
-RUN echo "display_errors=1\n" \
-    "error_reporting=E_ALL\n" \
+# Configure PHP for production
+RUN echo "display_errors=0\n" \
     "log_errors=1\n" \
     "error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
+
+# Clear cache and warmup for production
+RUN php bin/console cache:clear --env=prod --no-debug \
+    && php bin/console cache:warmup --env=prod --no-debug \
+    && chown -R www-data:www-data var
 
 EXPOSE 80
 
