@@ -28,8 +28,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Create necessary directories
-RUN mkdir -p var/cache var/log config/jwt
+# Create necessary directories with proper permissions
+RUN mkdir -p var/cache var/log config/jwt \
+    && chown -R www-data:www-data var config/jwt \
+    && chmod -R 777 var config/jwt
 
 # Set up Symfony for production
 ENV APP_ENV=prod
@@ -38,66 +40,63 @@ ENV APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8
 ENV DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Copy the entire application
+# Copy composer files first
+COPY composer.json composer.lock ./
+
+# Install dependencies
+RUN composer install --prefer-dist --no-dev --no-scripts --no-progress --no-interaction
+
+# Copy the rest of the application
 COPY . .
 
-# Create .env file with production values
-RUN echo "APP_ENV=prod" > .env && \
-    echo "APP_DEBUG=0" >> .env && \
-    echo "APP_SECRET=2ca64f8d83b9e89f5f19d672841d6bb8" >> .env && \
-    echo "DATABASE_URL=postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8" >> .env
+# Create .env.local for production (preferred over .env in prod)
+RUN echo "<?php\n\nreturn array(\n\
+    'APP_ENV' => 'prod',\n\
+    'APP_DEBUG' => '0',\n\
+    'APP_SECRET' => '2ca64f8d83b9e89f5f19d672841d6bb8',\n\
+    'DATABASE_URL' => 'postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8',\n\
+);" > .env.local.php \
+    && chown www-data:www-data .env.local.php \
+    && chmod 644 .env.local.php
 
-# Create a minimal .env.local.php for production
-RUN echo "<?php return array(" > .env.local.php && \
-    echo "'APP_ENV' => 'prod'," >> .env.local.php && \
-    echo "'APP_DEBUG' => '0'," >> .env.local.php && \
-    echo "'APP_SECRET' => '2ca64f8d83b9e89f5f19d672841d6bb8'," >> .env.local.php && \
-    echo "'DATABASE_URL' => 'postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8'" >> .env.local.php && \
-    echo ");" >> .env.local.php
-
-# Set initial permissions
-RUN chown -R www-data:www-data . \
-    && chmod -R 777 var config/jwt \
-    && chmod 644 .env .env.local.php \
-    && chmod +x bin/console
-
-# Install dependencies for production
-RUN set -x \
-    && composer install --prefer-dist --no-dev --no-progress --no-scripts --no-interaction \
-    && composer dump-autoload --classmap-authoritative --no-dev \
-    && composer clear-cache
+# Debug: Print file existence and permissions
+RUN ls -la .env* && \
+    echo "File contents of .env.local.php:" && \
+    cat .env.local.php
 
 # Generate JWT keys with proper permissions
 RUN set -x \
-    && mkdir -p config/jwt \
-    && chmod 777 config/jwt \
     && openssl genrsa -passout pass:wedding2025 -out config/jwt/private.pem -aes256 4096 \
     && openssl rsa -passin pass:wedding2025 -in config/jwt/private.pem -pubout -out config/jwt/public.pem \
     && chmod 644 config/jwt/private.pem config/jwt/public.pem \
     && chown -R www-data:www-data config/jwt
 
-# Copy Apache configuration
+# Copy and enable Apache configuration
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Configure Apache for port
-RUN echo "Listen 80" > /etc/apache2/ports.conf
+RUN echo "Listen \${PORT:-80}" > /etc/apache2/ports.conf
 
-# Configure PHP for production
-RUN echo "display_errors=1\n" \
-    "log_errors=1\n" \
-    "error_reporting=E_ALL\n" \
-    "error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
+# Configure PHP for production with error logging
+RUN echo "display_errors=1\n\
+log_errors=1\n\
+error_reporting=E_ALL\n\
+error_log=/var/log/apache2/php_errors.log" > /usr/local/etc/php/conf.d/error-logging.ini
 
-# Final setup and cache warmup
-RUN set -x \
-    && php bin/console cache:clear --env=prod --no-debug --no-warmup \
+# Dump autoload and clear cache
+RUN composer dump-autoload --classmap-authoritative --no-dev \
+    && php bin/console cache:clear --env=prod --no-debug \
     && php bin/console cache:warmup --env=prod --no-debug \
     && chown -R www-data:www-data var
 
-EXPOSE 80
+# Create start script that handles port configuration
+RUN echo '#!/bin/bash\n\
+sed -i "s/\${PORT:-80}/$PORT/g" /etc/apache2/ports.conf\n\
+apache2-foreground' > /usr/local/bin/start.sh \
+    && chmod +x /usr/local/bin/start.sh
 
-# Use a shell script to update ports.conf and start Apache
-COPY docker/start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+EXPOSE 80
+ENV PORT=80
 
 CMD ["/usr/local/bin/start.sh"]
