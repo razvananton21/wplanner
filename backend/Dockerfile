@@ -57,13 +57,13 @@ RUN set -e; \
     openssl rsa -pubout -in config/jwt/private.pem -passin pass:wedding2025 -out config/jwt/public.pem; \
     chmod 644 config/jwt/private.pem config/jwt/public.pem
 
-# Configure Apache for dynamic port
-RUN sed -i 's/^Listen 80/#Listen 80/' /etc/apache2/ports.conf
+# Configure Apache for port
+RUN echo "Listen \${PORT:-80}" > /etc/apache2/ports.conf
 
-# Default to port 80 for local development
+# Set default environment variables
 ENV PORT=80
+ENV SERVER_NAME=localhost
 
 EXPOSE 80
-EXPOSE ${PORT}
 
 CMD ["apache2-foreground"] 
