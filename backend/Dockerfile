@@ -51,11 +51,14 @@ RUN composer install --prefer-dist --no-dev --no-progress --no-scripts --no-inte
     && composer dump-autoload --classmap-authoritative --no-dev \
     && composer clear-cache
 
-# Generate JWT keys
+# Generate JWT keys with proper permissions
 RUN set -e; \
-    openssl genrsa -aes256 -passout pass:wedding2025 -out config/jwt/private.pem 4096; \
-    openssl rsa -pubout -in config/jwt/private.pem -passin pass:wedding2025 -out config/jwt/public.pem; \
-    chmod 644 config/jwt/private.pem config/jwt/public.pem
+    mkdir -p config/jwt; \
+    chmod 777 config/jwt; \
+    openssl genrsa -passout pass:wedding2025 -out config/jwt/private.pem -aes256 4096; \
+    openssl rsa -passin pass:wedding2025 -in config/jwt/private.pem -pubout -out config/jwt/public.pem; \
+    chmod 644 config/jwt/private.pem config/jwt/public.pem; \
+    chown -R www-data:www-data config/jwt
 
 # Copy Apache configuration
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
