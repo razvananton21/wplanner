@@ -49,21 +49,6 @@ RUN composer install --prefer-dist --no-dev --no-scripts --no-progress --no-inte
 # Copy the rest of the application
 COPY . .
 
-# Create .env.local for production (preferred over .env in prod)
-RUN echo "<?php\n\nreturn array(\n\
-    'APP_ENV' => 'prod',\n\
-    'APP_DEBUG' => '0',\n\
-    'APP_SECRET' => '2ca64f8d83b9e89f5f19d672841d6bb8',\n\
-    'DATABASE_URL' => 'postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8',\n\
-);" > .env.local.php \
-    && chown www-data:www-data .env.local.php \
-    && chmod 644 .env.local.php
-
-# Debug: Print file existence and permissions
-RUN ls -la .env* && \
-    echo "File contents of .env.local.php:" && \
-    cat .env.local.php
-
 # Generate JWT keys with proper permissions
 RUN set -x \
     && openssl genrsa -passout pass:wedding2025 -out config/jwt/private.pem -aes256 4096 \
