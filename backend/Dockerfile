@@ -21,7 +21,28 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache modules
 RUN a2enmod rewrite headers
-RUN a2enmod rewrite
+
+# Configure PHP
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+RUN echo "\
+date.timezone=UTC\n\
+memory_limit=256M\n\
+max_execution_time=30\n\
+post_max_size=20M\n\
+upload_max_filesize=20M\n\
+display_errors=On\n\
+display_startup_errors=On\n\
+error_reporting=E_ALL\n\
+log_errors=On\n\
+error_log=/var/log/apache2/php_errors.log\n\
+opcache.enable=1\n\
+opcache.memory_consumption=256\n\
+opcache.max_accelerated_files=20000\n\
+opcache.validate_timestamps=0\n\
+realpath_cache_size=4096K\n\
+realpath_cache_ttl=600\n\
+session.gc_maxlifetime=3600\n\
+" > /usr/local/etc/php/conf.d/app.ini
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -103,6 +124,9 @@ echo "APP_ENV=$APP_ENV" >> /var/log/apache2/error.log\n\
 echo "SYMFONY_DOTENV_VARS=$SYMFONY_DOTENV_VARS" >> /var/log/apache2/error.log\n\
 echo "DocumentRoot: $(ls -la /var/www/html/public)" >> /var/log/apache2/error.log\n\
 echo "Apache Config: $(cat /etc/apache2/sites-available/000-default.conf)" >> /var/log/apache2/error.log\n\
+echo "PHP Modules: $(php -m)" >> /var/log/apache2/error.log\n\
+echo "PHP Version: $(php -v)" >> /var/log/apache2/error.log\n\
+echo "PHP Config: $(php -i)" >> /var/log/apache2/error.log\n\
 sed -i "s/\${PORT:-80}/$PORT/g" /etc/apache2/ports.conf\n\
 apache2-foreground' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
