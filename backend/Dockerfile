@@ -34,6 +34,7 @@ COPY . .
 
 # Install dependencies
 RUN composer install --no-interaction --no-scripts
+RUN composer require symfony/runtime
 RUN php bin/console cache:clear
 RUN php bin/console assets:install
 
