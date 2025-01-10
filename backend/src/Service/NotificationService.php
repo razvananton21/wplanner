@@ -13,7 +13,8 @@ class NotificationService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private MailerInterface $mailer
+        private MailerInterface $mailer,
+        private string $appEnv = 'prod'
     ) {}
 
     public function createRsvpNotification(Guest $guest, bool $isUpdate = false): void
@@ -37,21 +38,26 @@ class NotificationService
 
     private function sendRsvpNotificationEmail(Notification $notification): void
     {
-        $wedding = $notification->getWedding();
-        $admin = $wedding->getAdmin();
-        $guest = $notification->getGuest();
+        try {
+            $wedding = $notification->getWedding();
+            $admin = $wedding->getAdmin();
+            $guest = $notification->getGuest();
 
-        $subject = $notification->getType() === 'rsvp_update' 
-            ? 'RSVP Updated - ' . $wedding->getTitle()
-            : 'New RSVP Submission - ' . $wedding->getTitle();
+            $subject = $notification->getType() === 'rsvp_update' 
+                ? 'RSVP Updated - ' . $wedding->getTitle()
+                : 'New RSVP Submission - ' . $wedding->getTitle();
 
-        $email = (new Email())
-            ->from('noreply@wplanner.com')
-            ->to($admin->getEmail())
-            ->subject($subject)
-            ->html($this->getRsvpNotificationEmailTemplate($notification));
+            $email = (new Email())
+                ->from('noreply@wplanner.com')
+                ->to($admin->getEmail())
+                ->subject($subject)
+                ->html($this->getRsvpNotificationEmailTemplate($notification));
 
-        $this->mailer->send($email);
+            $this->mailer->send($email);
+        } catch (\Exception $e) {
+            // Log error but don't throw it to prevent breaking the flow
+            error_log("Failed to send notification email: " . $e->getMessage());
+        }
     }
 
     private function getRsvpNotificationEmailTemplate(Notification $notification): string

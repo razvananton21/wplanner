@@ -12,7 +12,8 @@ class GuestService
     public function __construct(
         private MailerInterface $mailer,
         private UrlGeneratorInterface $urlGenerator,
-        private string $appUrl
+        private string $appUrl,
+        private string $appEnv = 'prod'
     ) {}
 
     public function generateRsvpToken(): string
@@ -22,17 +23,22 @@ class GuestService
 
     public function sendRsvpEmail(Guest $guest): void
     {
-        $rsvpUrl = $this->appUrl . '/rsvp/' . $guest->getRsvpToken();
-        $weddingTitle = $guest->getWedding()->getTitle();
-        $weddingDate = $guest->getWedding()->getDate()->format('F j, Y');
+        try {
+            $rsvpUrl = $this->appUrl . '/rsvp/' . $guest->getRsvpToken();
+            $weddingTitle = $guest->getWedding()->getTitle();
+            $weddingDate = $guest->getWedding()->getDate()->format('F j, Y');
 
-        $email = (new Email())
-            ->from('noreply@wplanner.com')
-            ->to($guest->getEmail())
-            ->subject("Wedding Invitation - {$weddingTitle}")
-            ->html($this->getEmailTemplate($guest, $rsvpUrl, $weddingTitle, $weddingDate));
+            $email = (new Email())
+                ->from('noreply@wplanner.com')
+                ->to($guest->getEmail())
+                ->subject("Wedding Invitation - {$weddingTitle}")
+                ->html($this->getEmailTemplate($guest, $rsvpUrl, $weddingTitle, $weddingDate));
 
-        $this->mailer->send($email);
+            $this->mailer->send($email);
+        } catch (\Exception $e) {
+            // Log error but don't throw it to prevent breaking the flow
+            error_log("Failed to send RSVP email: " . $e->getMessage());
+        }
     }
 
     private function getEmailTemplate(Guest $guest, string $rsvpUrl, string $weddingTitle, string $weddingDate): string
