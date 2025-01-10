@@ -45,6 +45,10 @@ class GoogleOAuthService
         $this->googleClient->addScope('email');
         $this->googleClient->addScope('profile');
         $this->googleClient->setPrompt('select_account consent');
+        
+        error_log("Google Client Configuration:");
+        error_log("Redirect URI set to: " . $this->googleClient->getRedirectUri());
+        error_log("Client ID set to: " . $this->googleClient->getClientId());
     }
 
     public function getAuthUrl(): string
@@ -56,52 +60,69 @@ class GoogleOAuthService
 
     public function authenticateUser(string $code): array
     {
-        $token = $this->googleClient->fetchAccessTokenWithAuthCode($code);
+        error_log("Attempting to authenticate with code: " . substr($code, 0, 10) . "...");
         
-        if (!isset($token['access_token'])) {
-            throw new AuthenticationException('Failed to get access token');
-        }
+        try {
+            $token = $this->googleClient->fetchAccessTokenWithAuthCode($code);
+            error_log("Token fetch response: " . json_encode($token));
+            
+            if (!isset($token['access_token'])) {
+                error_log("Failed to get access token. Response: " . json_encode($token));
+                throw new AuthenticationException('Failed to get access token');
+            }
 
-        $this->googleClient->setAccessToken($token);
-        $googleOAuth = $this->googleClient->verifyIdToken();
+            $this->googleClient->setAccessToken($token);
+            $googleOAuth = $this->googleClient->verifyIdToken();
 
-        if (!$googleOAuth) {
-            throw new AuthenticationException('Invalid ID token');
-        }
+            if (!$googleOAuth) {
+                error_log("Invalid ID token received");
+                throw new AuthenticationException('Invalid ID token');
+            }
 
-        $googleId = $googleOAuth['sub'];
-        $email = $googleOAuth['email'];
-        $firstName = $googleOAuth['given_name'] ?? '';
-        $lastName = $googleOAuth['family_name'] ?? '';
-        $picture = $googleOAuth['picture'] ?? null;
+            error_log("Successfully verified ID token for user: " . ($googleOAuth['email'] ?? 'unknown'));
+            
+            $googleId = $googleOAuth['sub'];
+            $email = $googleOAuth['email'];
+            $firstName = $googleOAuth['given_name'] ?? '';
+            $lastName = $googleOAuth['family_name'] ?? '';
+            $picture = $googleOAuth['picture'] ?? null;
 
-        $user = $this->userRepository->findOneBy(['googleId' => $googleId]);
-        
-        if (!$user) {
-            $user = $this->userRepository->findOneBy(['email' => $email]);
+            $user = $this->userRepository->findOneBy(['googleId' => $googleId]);
             
             if (!$user) {
-                $user = new User();
-                $user->setEmail($email);
-                $user->setRoles(['ROLE_USER']);
+                $user = $this->userRepository->findOneBy(['email' => $email]);
+                
+                if (!$user) {
+                    error_log("Creating new user for email: " . $email);
+                    $user = new User();
+                    $user->setEmail($email);
+                    $user->setRoles(['ROLE_USER']);
+                }
+                
+                $user->setGoogleId($googleId);
             }
+
+            $user->setFirstName($firstName);
+            $user->setLastName($lastName);
+            $user->setAvatar($picture);
+            $user->setRefreshToken($token['refresh_token'] ?? null);
             
-            $user->setGoogleId($googleId);
+            if (isset($token['expires_in'])) {
+                $expiresAt = new \DateTimeImmutable('now + ' . $token['expires_in'] . ' seconds');
+                $user->setTokenExpiresAt($expiresAt);
+            }
+
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
+            error_log("User successfully authenticated and saved: " . $email);
+            
+            return $this->tokenRefreshService->generateInitialTokens($user);
+            
+        } catch (\Exception $e) {
+            error_log("Error during authentication: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            throw $e;
         }
-
-        $user->setFirstName($firstName);
-        $user->setLastName($lastName);
-        $user->setAvatar($picture);
-        $user->setRefreshToken($token['refresh_token'] ?? null);
-        
-        if (isset($token['expires_in'])) {
-            $expiresAt = new \DateTimeImmutable('now + ' . $token['expires_in'] . ' seconds');
-            $user->setTokenExpiresAt($expiresAt);
-        }
-
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return $this->tokenRefreshService->generateInitialTokens($user);
     }
 } 
