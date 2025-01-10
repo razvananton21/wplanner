@@ -30,6 +30,14 @@ class GoogleOAuthService
         error_log("Google OAuth Config - Client ID: " . $googleClientId);
         error_log("Google OAuth Config - Callback URL: " . $googleCallbackUrl);
         
+        if (empty($googleCallbackUrl)) {
+            throw new \InvalidArgumentException('Google callback URL cannot be empty');
+        }
+
+        if (!filter_var($googleCallbackUrl, FILTER_VALIDATE_URL)) {
+            throw new \InvalidArgumentException('Google callback URL must be a valid absolute URL');
+        }
+        
         $this->googleClient = new GoogleClient();
         $this->googleClient->setClientId($googleClientId);
         $this->googleClient->setClientSecret($googleClientSecret);

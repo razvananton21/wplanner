@@ -14,6 +14,9 @@ const GoogleOAuthButton = () => {
             // Get the Google OAuth URL
             const authUrl = await oauthService.getGoogleAuthUrl();
             
+            // Ensure the URL is absolute
+            const url = new URL(authUrl, window.location.origin);
+            
             // Open the Google OAuth window
             const width = 500;
             const height = 600;
@@ -21,7 +24,7 @@ const GoogleOAuthButton = () => {
             const top = window.screenY + (window.outerHeight - height) / 2;
             
             const authWindow = window.open(
-                authUrl,
+                url.toString(),
                 'Google OAuth',
                 `width=${width},height=${height},left=${left},top=${top}`
             );

@@ -19,7 +19,9 @@ const getGoogleAuthUrl = async () => {
             throw new Error('Invalid response from server');
         }
         
-        return response.data.url;
+        // Ensure the URL is absolute
+        const url = new URL(response.data.url, window.location.origin);
+        return url.toString();
     } catch (error) {
         console.error('Google Auth URL Error:', error.response || error);
         throw new Error(error.response?.data?.error || 'Failed to get Google authentication URL');
