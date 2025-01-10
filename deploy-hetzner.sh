@@ -85,14 +85,14 @@ echo "💾 Setting up backup script..."
 cat > /root/backup.sh << 'EOL'
 #!/bin/bash
 BACKUP_DIR="/root/backups"
-MYSQL_CONTAINER="wplanner-database"
+MYSQL_CONTAINER="wplanner_database_1"
 DATE=$(date +%Y%m%d_%H%M%S)
 
 # Create backup directory
 mkdir -p $BACKUP_DIR
 
 # Backup database
-docker exec $MYSQL_CONTAINER mysqldump -u root -p$MYSQL_ROOT_PASSWORD wplanner > $BACKUP_DIR/db_backup_$DATE.sql
+docker exec $MYSQL_CONTAINER mysqldump -u root -p${MYSQL_ROOT_PASSWORD} wplanner > $BACKUP_DIR/db_backup_$DATE.sql
 
 # Backup uploads
 tar -czf $BACKUP_DIR/uploads_backup_$DATE.tar.gz /var/www/html/public/uploads
