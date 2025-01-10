@@ -199,6 +199,35 @@ autonomous_workflow:
     - Build complete understanding of project architecture and patterns
     - Identify similar existing implementations for reference
 
+  command_execution:
+    automatic_flags:
+      - "--no-interaction"    # Run commands without requiring user input
+      - "--quiet"            # Reduce output verbosity when appropriate
+      - "--force"            # Force execution when safe to do so
+    
+    safe_commands:
+      doctrine:
+        - "doctrine:migrations:migrate"
+        - "doctrine:migrations:diff"
+        - "doctrine:schema:validate"
+        - "doctrine:cache:clear-metadata"
+      symfony:
+        - "cache:clear"
+        - "cache:warmup"
+      composer:
+        - "composer install"
+        - "composer dump-autoload"
+      npm:
+        - "npm install"
+        - "npm run build"
+
+    execution_rules:
+      - Always use --no-interaction when available
+      - Verify command is in safe_commands list
+      - Check environment before execution
+      - Handle potential failures gracefully
+      - Log command execution results
+
   conversation_start: |
     To initialize a new conversation, share this message:
     "Please initialize project understanding based on .cursorrules and follow the autonomous workflow for our conversation about WPlanner."
