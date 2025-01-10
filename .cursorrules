@@ -1,0 +1,261 @@
+# WPlanner Project Rules for AI Assistance
+
+# AI Assistant Profile
+ai_profile:
+  role: "Expert AI Programming Assistant"
+  primary_focus: "Clean and readable code production"
+  expertise:
+    languages:
+      php: "Latest stable version (8.2+)"
+      javascript: "Latest stable version (ES2023+)"
+    frameworks:
+      frontend:
+        - "React (Latest stable)"
+        - "Modern React patterns (Hooks, Context, Suspense)"
+        - "State management best practices"
+      backend:
+        - "Symfony 6+ (Latest stable)"
+        - "Modern Symfony patterns and practices"
+        - "Doctrine ORM optimization"
+    infrastructure:
+      - "Docker and Docker Compose"
+      - "Container orchestration"
+      - "Development workflows"
+  
+  working_principles:
+    - "Focus on code clarity and maintainability"
+    - "Follow latest language features and best practices"
+    - "Provide accurate and factual responses"
+    - "Apply thorough reasoning to all decisions"
+    - "Consider full-stack implications of changes"
+    - "Maintain security best practices"
+    - "Optimize for performance and scalability"
+
+# Documentation Reading Order
+documentation_order:
+  1: docs/CONTEXT.md          # Project overview and documentation structure
+  2: docs/codebase_part1.md   # Frontend architecture
+  3: docs/codebase_part2.md   # Backend architecture
+  4: docs/codebase_part3.md   # Integration patterns
+  5: docs/ENDPOINTS.md        # API documentation
+  6: docs/roadmap.md          # Project status and plans
+  7: docs/deployment.md       # Deployment and operations
+
+# Project Standards
+standards:
+  status_markers:
+    completed: "[✓]"
+    in_progress: "[WIP]"
+    planned: "[TODO]"
+  
+  code_organization:
+    frontend:
+      framework: "React + Vite"
+      state_management: "React Context + Hooks"
+      styling: "Tailwind CSS"
+    backend:
+      framework: "Symfony 6"
+      database: "MySQL 8"
+      cache: "Redis"
+
+# Key Features Status
+features:
+  authentication:
+    status: "[✓]"
+    token_expiration: "7 days"
+    methods: ["JWT", "Google OAuth"]
+  
+  wedding_management:
+    status: "[✓]"
+    core_features: ["CRUD", "Timeline", "Details"]
+  
+  guest_management:
+    status: "[✓]"
+    includes: ["CRUD", "RSVP", "Categories", "Plus-ones"]
+  
+  budget_tracking:
+    status: "[✓]"
+    limitations: "Basic implementation - overview and expenses only"
+  
+  photo_gallery:
+    status: "[TODO]"
+    planned_features: ["Upload", "Organization", "Sharing"]
+
+# Integration Points
+integrations:
+  - google_oauth
+  - email_service
+  - file_storage
+
+# Known Limitations
+limitations:
+  - Budget reporting features not implemented
+  - No mobile-specific optimizations
+  - Photo gallery not started
+  - Limited data export capabilities
+
+# Technical Decisions Pending
+pending_decisions:
+  - Response time requirements
+  - Caching strategies
+  - Rate limiting rules
+  - Data retention policies
+  - Error handling standards
+
+# Development Guidelines
+guidelines:
+  commits:
+    format: "type(scope): description"
+    types: ["feat", "fix", "docs", "style", "refactor", "test", "chore"]
+  
+  branches:
+    main: "production ready code"
+    develop: "integration branch"
+    feature: "feature/*"
+    bugfix: "bugfix/*"
+
+# Deployment Environments
+environments:
+  production:
+    platform: "Hetzner"
+    deployment: "Docker"
+    domain: "nip.io based"
+    monitoring: "Prometheus + Grafana"
+
+# Required Reading Before Changes
+required_reading:
+  frontend_changes:
+    - docs/codebase_part1.md
+    - docs/codebase_part3.md
+  
+  backend_changes:
+    - docs/codebase_part2.md
+    - docs/ENDPOINTS.md
+  
+  deployment_changes:
+    - docs/deployment.md
+
+# Error Response Format
+error_format:
+  structure:
+    status: "HTTP status code"
+    message: "User-friendly message"
+    errors: "Detailed error information"
+    code: "Internal error code"
+
+# Success Metrics
+metrics:
+  performance:
+    - API response times
+    - Page load times
+    - Resource utilization
+  
+  user_engagement:
+    - Active users
+    - Feature usage
+    - Session duration
+
+# Code Change Safety
+code_safety:
+  pre_change_checks:
+    - Read and understand the full context of the file being modified
+    - Identify dependencies and potential side effects
+    - Review existing tests related to the change
+    - Check for similar patterns in the codebase
+  
+  implementation_rules:
+    - Preserve existing functionality unless explicitly requested to change
+    - Maintain consistent code style and patterns
+    - Keep changes minimal and focused
+    - Respect existing error handling patterns
+    - Follow established naming conventions
+  
+  post_change_validation:
+    - Review the complete diff before confirming changes
+    - Verify all imports and dependencies are properly handled
+    - Check for potential edge cases
+    - Ensure error handling is properly maintained
+    - Confirm no unintended side effects
+  
+  critical_areas:
+    authentication:
+      - Token handling
+      - Session management
+      - Permission checks
+    data_integrity:
+      - Database operations
+      - File operations
+      - State management
+    user_flows:
+      - Form submissions
+      - Navigation paths
+      - API integrations
+
+# Autonomous Workflow
+autonomous_workflow:
+  initialization:
+    - Read .cursorrules file completely
+    - Follow documentation_order section to review all documentation
+    - Build complete understanding of project architecture and patterns
+    - Identify similar existing implementations for reference
+
+  conversation_start: |
+    To initialize a new conversation, share this message:
+    "Please initialize project understanding based on .cursorrules and follow the autonomous workflow for our conversation about WPlanner."
+    This will trigger:
+    1. Complete documentation review
+    2. Pattern recognition
+    3. Safety measures activation
+    4. Verification checklist preparation
+
+  pattern_recognition:
+    entity_patterns:
+      - Database schema structure
+      - Entity class organization
+      - Repository methods
+      - Service layer implementation
+      - Controller endpoints
+      - Form types and validation
+      - Frontend component structure
+      - State management approach
+    
+    implementation_patterns:
+      - CRUD operations
+      - Validation rules
+      - Error handling
+      - Event dispatching
+      - Frontend-backend communication
+      - Testing approach
+
+  change_implementation:
+    steps:
+      1: Identify similar existing features for reference
+      2: List all required components based on pattern
+      3: Plan changes across all layers
+      4: Implement changes following established patterns
+      5: Validate against code_safety rules
+      6: Review entire implementation for consistency
+
+  verification_checklist:
+    backend:
+      - Entity mapping correct
+      - Repository methods follow patterns
+      - Service layer complete
+      - Controller endpoints consistent
+      - Security rules applied
+      - Tests implemented
+    
+    frontend:
+      - Components follow structure
+      - State management consistent
+      - API integration complete
+      - Error handling implemented
+      - UI/UX patterns followed
+      - Responsive design maintained
+
+  safety_measures:
+    - Never modify existing functionality without explicit request
+    - Always follow established patterns exactly
+    - Implement complete feature vertical slice
+    - Maintain consistent naming and structure
+    - Include all necessary tests and validation 
