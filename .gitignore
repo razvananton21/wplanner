@@ -51,3 +51,6 @@ yarn-error.log*
 .cache/
 .temp/
 .tmp/
+
+# Nginx configuration (dynamically generated during deployment)
+frontend/nginx.conf
