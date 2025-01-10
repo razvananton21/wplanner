@@ -5,6 +5,29 @@ set -e
 
 echo "🚀 Starting Hetzner deployment process..."
 
+# Verify environment file exists
+if [ ! -f .env.production ]; then
+    echo "❌ Error: .env.production file not found!"
+    echo "Please create it using .env.production.example as a template."
+    exit 1
+fi
+
+# Source the environment variables
+source .env.production
+
+# Check required variables
+if [ -z "${DOMAIN}" ]; then
+    echo "❌ Error: DOMAIN variable is not set in .env.production!"
+    echo "Please add: DOMAIN=your-domain.com"
+    exit 1
+fi
+
+if [ -z "${EMAIL}" ]; then
+    echo "❌ Error: EMAIL variable is not set in .env.production!"
+    echo "Please add: EMAIL=your-email@example.com"
+    exit 1
+fi
+
 # Update system
 echo "📦 Updating system packages..."
 apt update && apt upgrade -y
@@ -12,13 +35,6 @@ apt update && apt upgrade -y
 # Install/Update required packages
 echo "📦 Installing/Updating required packages..."
 apt install -y docker.io docker-compose git certbot python3-certbot-nginx
-
-# Verify environment file exists
-if [ ! -f .env.production ]; then
-    echo "❌ Error: .env.production file not found!"
-    echo "Please create it using .env.production.example as a template."
-    exit 1
-fi
 
 # Setup SSL if needed
 if [ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
