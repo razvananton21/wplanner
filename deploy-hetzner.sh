@@ -34,12 +34,17 @@ apt update && apt upgrade -y
 
 # Install/Update required packages
 echo "📦 Installing/Updating required packages..."
-apt install -y docker.io docker-compose git certbot python3-certbot-nginx
+apt install -y docker.io docker-compose git
 
-# Setup SSL if needed
-if [ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
+# Check if DOMAIN is an IP address
+if [[ $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "📝 Using IP address without SSL..."
+    PROTOCOL="http"
+else
     echo "🔒 Setting up SSL certificate..."
+    apt install -y certbot python3-certbot-nginx
     certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos -m ${EMAIL}
+    PROTOCOL="https"
 fi
 
 # Pull latest changes
@@ -49,7 +54,7 @@ git pull origin main
 # Setup environment variables for frontend
 echo "🔧 Setting up frontend environment..."
 cat > frontend/.env.production << EOL
-VITE_API_URL=https://${DOMAIN}/api
+VITE_API_URL=${PROTOCOL}://${DOMAIN}/api
 EOL
 
 # Copy production configurations
@@ -78,7 +83,7 @@ docker-compose -f docker-compose.prod.yml up -d
 
 # Verify frontend is accessible
 echo "🔍 Verifying frontend access..."
-curl -s -o /dev/null -w "%{http_code}" https://${DOMAIN} | grep -q "200" && \
+curl -s -o /dev/null -w "%{http_code}" ${PROTOCOL}://${DOMAIN} | grep -q "200" && \
     echo "✅ Frontend is accessible" || \
     echo "❌ Frontend check failed"
 
@@ -136,8 +141,8 @@ docker-compose -f docker-compose.prod.yml ps
 
 echo "✨ Deployment completed successfully!"
 echo "🌍 Your application should now be accessible at:"
-echo "   - Frontend: https://${DOMAIN}"
-echo "   - Backend API: https://${DOMAIN}/api"
+echo "   - Frontend: ${PROTOCOL}://${DOMAIN}"
+echo "   - Backend API: ${PROTOCOL}://${DOMAIN}/api"
 echo ""
 echo "📊 Monitoring:"
 echo "   - NetData: http://localhost:19999"
