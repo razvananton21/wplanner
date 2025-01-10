@@ -11,7 +11,6 @@ services:
       - "8080:80"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
-      - frontend_build:/usr/share/nginx/html
     environment:
       - NODE_ENV=production
     depends_on:
@@ -68,8 +67,6 @@ volumes:
   mysql_data:
     driver: local
   backend_uploads:
-    driver: local
-  frontend_build:
     driver: local
 
 networks:
