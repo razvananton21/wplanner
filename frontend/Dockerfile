@@ -14,7 +14,7 @@ CMD ["npm", "run", "dev"]
 
 # Build stage
 FROM base as builder
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
