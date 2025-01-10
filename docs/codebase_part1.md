@@ -1,8 +1,34 @@
 # Frontend Architecture Documentation
 
-## Entry Points
+This document covers the frontend architecture and technology stack of the Wedding Planner application. It serves as the primary reference for:
+- Technology stack and preferences
+- Application structure and entry points
+- Component organization
+- Service implementations
+- State management patterns
 
-### 1. Application Bootstrap (`main.jsx`)
+## Technology Stack [✓]
+
+### Core Technologies
+- React (JavaScript, not TypeScript)
+- Redux Toolkit for state management
+- Material-UI for components
+- React Router for routing
+- Axios for API calls
+
+### Development Preferences
+- JavaScript over TypeScript
+- Functional components with hooks
+- Material-UI for consistent design
+- RESTful API architecture
+
+### Infrastructure
+- Docker for containerization
+- Nginx for web server
+
+## Entry Points [✓]
+
+### 1. Application Bootstrap (`main.jsx`) [✓]
 - Purpose: Application initialization
 - Key responsibilities:
   - Redux store setup
@@ -15,7 +41,7 @@
   - Material-UI
   - React Router
 
-### 2. Root Component (`App.jsx`)
+### 2. Root Component (`App.jsx`) [✓]
 - Purpose: Application shell
 - Key responsibilities:
   - Route definitions
@@ -31,7 +57,7 @@
 
 ### 1. Components (`src/components/`)
 
-#### Layout Components (`components/layout/`)
+#### Layout Components (`components/layout/`) [✓]
 - `Layout.jsx`
   - Main application wrapper
   - Manages responsive sidebar
@@ -53,7 +79,7 @@
   - Used by: Layout.jsx
   - Dependencies: Router
 
-#### Wedding Components (`components/weddings/`)
+#### Wedding Components (`components/weddings/`) [✓]
 - `WeddingList.jsx`
   - Grid/list view
   - Sorting/filtering
@@ -75,7 +101,7 @@
   - Used by: Create/Edit pages
   - Dependencies: WeddingService
 
-#### Guest Components (`components/guests/`)
+#### Guest Components (`components/guests/`) [✓]
 - `GuestList.jsx`
   - Table/grid view
   - Bulk actions
@@ -90,7 +116,7 @@
   - Used by: GuestList
   - Dependencies: GuestService
 
-#### RSVP Components (`components/rsvp/`)
+#### RSVP Components (`components/rsvp/`) [✓]
 - `RsvpForm.jsx`
   - Dynamic fields
   - Validation logic
@@ -105,7 +131,7 @@
   - Used by: WeddingDetails
   - Dependencies: FormService
 
-#### Table Components (`components/tables/`)
+#### Table Components (`components/tables/`) [✓]
 - `TableList.jsx`
   - Table management
   - Capacity tracking
@@ -120,7 +146,7 @@
   - Used by: TableList
   - Dependencies: TableService
 
-#### Vendor Components (`components/vendors/`)
+#### Vendor Components (`components/vendors/`) [✓]
 - `VendorList.jsx`
   - Grid layout display
   - Status indicators
@@ -138,7 +164,7 @@
   - Used by: VendorList
   - Dependencies: VendorService
 
-#### Task Components (`components/tasks/`)
+#### Task Components (`components/tasks/`) [✓]
 - `TaskList.jsx`
   - List/grid view of tasks
   - Filtering by category and status
@@ -155,16 +181,16 @@
   - Used by: TaskList
   - Dependencies: TaskService
 
-### 2. Services (`src/services/`)
+### 2. Services (`src/services/`) [✓]
 
-#### API Configuration (`api.js`)
+#### API Configuration (`api.js`) [✓]
 - Base configuration
 - Interceptors
 - Error handling
 - Token management
 - Used by: All services
 
-#### Authentication (`authService.js`)
+#### Authentication (`authService.js`) [✓]
 - Methods:
   ```javascript
   login(email, password)
@@ -176,7 +202,7 @@
 - Used by: Auth components
 - Endpoints: `/api/login`, `/api/logout`
 
-#### Wedding Management (`weddingService.js`)
+#### Wedding Management (`weddingService.js`) [✓]
 - Methods:
   ```javascript
   getWeddings()
@@ -189,7 +215,7 @@
 - Used by: Wedding components
 - Endpoints: `/api/weddings/*`
 
-#### Guest Management (`guestService.js`)
+#### Guest Management (`guestService.js`) [✓]
 - Methods:
   ```javascript
   getGuests(weddingId)
@@ -201,7 +227,7 @@
 - Used by: Guest components
 - Endpoints: `/api/weddings/{id}/guests/*`
 
-#### RSVP Management (`rsvpService.js`)
+#### RSVP Management (`rsvpService.js`) [✓]
 - Methods:
   ```javascript
   getForm(token)
@@ -212,7 +238,7 @@
 - Used by: RSVP components
 - Endpoints: `/api/rsvp/*`
 
-#### Table Management (`tableService.js`)
+#### Table Management (`tableService.js`) [✓]
 - Methods:
   ```javascript
   getTables(weddingId)
@@ -224,7 +250,7 @@
 - Used by: Table components
 - Endpoints: `/api/weddings/{id}/tables/*`
 
-#### Vendor Management (`vendorService.js`)
+#### Vendor Management (`vendorService.js`) [✓]
 - Methods:
   ```javascript
   getVendors(weddingId)
@@ -238,7 +264,7 @@
 - Used by: Vendor components
 - Endpoints: `/api/weddings/{id}/vendors/*`
 
-#### Task Service (`services/taskService.js`)
+#### Task Management (`taskService.js`) [✓]
 - Methods:
   ```javascript
   getTasks(weddingId)
@@ -255,15 +281,41 @@
 - Used by: Task components
 - Endpoints: `/api/weddings/{id}/tasks/*`
 
-### 3. State Management (`src/store/`)
+#### Budget Management (`budgetService.js`) [✓]
+- Methods:
+  ```javascript
+  getBudget(weddingId)
+  createBudget(weddingId, data)
+  updateBudget(weddingId, data)
+  getExpenses(weddingId)
+  createExpense(weddingId, data)
+  updateExpense(weddingId, expenseId, data)
+  deleteExpense(weddingId, expenseId)
+  getBudgetSummary(weddingId)
+  ```
+- Used by: Budget components
+- Endpoints: `/api/weddings/{id}/budget/*`
 
-#### Store Configuration (`store.js`)
+#### Photo Gallery (`photoService.js`) [TODO]
+- Methods:
+  ```javascript
+  getPhotos(weddingId)
+  uploadPhoto(weddingId, file, metadata)
+  deletePhoto(weddingId, photoId)
+  updatePhotoMetadata(weddingId, photoId, metadata)
+  ```
+- Used by: Photo Gallery components (planned)
+- Endpoints: `/api/weddings/{id}/photos/*`
+
+### 3. State Management (`src/store/`) [✓]
+
+#### Store Configuration (`store.js`) [✓]
 - Redux setup
 - Middleware
 - State persistence
 - Used by: `main.jsx`
 
-#### Authentication (`authSlice.js`)
+#### Authentication (`authSlice.js`) [✓]
 - State shape:
   ```javascript
   {
@@ -279,7 +331,7 @@
   - updateProfile
 - Used by: Auth components
 
-#### Wedding Management (`weddingSlice.js`)
+#### Wedding Management (`weddingSlice.js`) [✓]
 - State shape:
   ```javascript
   {
@@ -296,7 +348,7 @@
   - deleteWedding
 - Used by: Wedding components
 
-#### Guest Management (`guestSlice.js`)
+#### Guest Management (`guestSlice.js`) [✓]
 - State shape:
   ```javascript
   {
@@ -315,7 +367,7 @@
   - bulkCreate
 - Used by: Guest components
 
-#### Table Management (`tableSlice.js`)
+#### Table Management (`tableSlice.js`) [✓]
 - State shape:
   ```javascript
   {
@@ -333,7 +385,7 @@
   - assignGuests
 - Used by: Table components
 
-#### Vendor State Management (`vendorSlice.js`)
+#### Vendor Management (`vendorSlice.js`) [✓]
 - State shape:
   ```javascript
   {
@@ -355,9 +407,74 @@
   - deleteFile
 - Used by: Vendor components
 
-### 4. Custom Hooks (`src/hooks/`)
+#### Task Management (`taskSlice.js`) [✓]
+- State shape:
+  ```javascript
+  {
+    items: Task[],
+    loading: boolean,
+    error: Error | null,
+    filters: {
+      category: string | null,
+      status: string | null,
+      priority: number | null
+    }
+  }
+  ```
+- Actions:
+  - fetchTasks
+  - createTask
+  - updateTask
+  - deleteTask
+  - reorderTasks
+  - filterTasks
+- Used by: Task components
 
-#### Authentication (`useAuth.js`)
+#### Budget Management (`budgetSlice.js`) [✓]
+- State shape:
+  ```javascript
+  {
+    budget: Budget | null,
+    expenses: Expense[],
+    summary: BudgetSummary | null,
+    loading: boolean,
+    error: Error | null
+  }
+  ```
+- Actions:
+  - fetchBudget
+  - createBudget
+  - updateBudget
+  - fetchExpenses
+  - createExpense
+  - updateExpense
+  - deleteExpense
+  - fetchSummary
+- Used by: Budget components
+
+#### Photo Gallery (`photoSlice.js`) [TODO]
+- State shape:
+  ```javascript
+  {
+    items: Photo[],
+    loading: boolean,
+    error: Error | null,
+    upload: {
+      progress: number,
+      error: Error | null
+    }
+  }
+  ```
+- Actions:
+  - fetchPhotos
+  - uploadPhoto
+  - deletePhoto
+  - updateMetadata
+- Used by: Photo Gallery components (planned)
+
+### 4. Custom Hooks (`src/hooks/`) [✓]
+
+#### Authentication (`useAuth.js`) [✓]
 - Purpose: Auth state management
 - Features:
   - Login state
@@ -365,7 +482,7 @@
   - Permissions
 - Used by: Protected components
 
-#### Form Management (`useForm.js`)
+#### Form Management (`useForm.js`) [✓]
 - Purpose: Form handling
 - Features:
   - Form state
@@ -373,13 +490,13 @@
   - Submission
 - Used by: All forms
 
-#### API Communication (`useApi.js`)
+#### API Communication (`useApi.js`) [✓]
 - Purpose: API interaction
 - Features:
   - Request handling
   - Loading states
   - Error management
-- Used by: Service components 
+- Used by: Service components
 
 ## Core Components
 

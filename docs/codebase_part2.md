@@ -1,11 +1,19 @@
 # Backend Architecture Documentation
 
+This document covers the backend architecture and database structure of the Wedding Planner application. It serves as the primary reference for:
+- Controllers and API endpoints
+- Entity definitions and relationships
+- Repository patterns
+- Service implementations
+- Security configuration
+- Database schema
+
 ## Core Components
 
-### 1. Controllers (`src/Controller/`)
+### 1. Controllers (`src/Controller/`) [✓]
 
-#### Authentication (`AuthController.php`)
-- Purpose: User authentication
+#### Authentication (`AuthController.php`) [✓]
+- Purpose: User authentication (7-day token expiration)
 - Endpoints:
   ```php
   #[Route('/api/login', methods: ['POST'])]
@@ -19,7 +27,7 @@
   - JWTTokenManagerInterface
 - Used by: Frontend auth services
 
-#### Wedding Management (`WeddingController.php`)
+#### Wedding Management (`WeddingController.php`) [✓]
 - Purpose: Wedding CRUD operations
 - Endpoints:
   ```php
@@ -34,7 +42,7 @@
   - WeddingRepository
 - Used by: Frontend wedding services
 
-#### Guest Management (`GuestController.php`)
+#### Guest Management (`GuestController.php`) [✓]
 - Purpose: Guest operations
 - Endpoints:
   ```php
@@ -48,7 +56,7 @@
   - TableService
 - Used by: Frontend guest services
 
-#### RSVP Management (`RsvpController.php`)
+#### RSVP Management (`RsvpController.php`) [✓]
 - Purpose: RSVP handling
 - Endpoints:
   ```php
@@ -62,7 +70,7 @@
   - FormFieldService
 - Used by: Frontend RSVP services
 
-#### Table Management (`TableController.php`)
+#### Table Management (`TableController.php`) [✓]
 - Purpose: Table and seating
 - Endpoints:
   ```php
@@ -76,7 +84,7 @@
   - WeddingRepository
 - Used by: Frontend table services
 
-#### Vendor Management (`VendorController.php`)
+#### Vendor Management (`VendorController.php`) [✓]
 - Purpose: Vendor and file management
 - Endpoints:
   ```php
@@ -91,7 +99,7 @@
   - WeddingRepository
 - Used by: Frontend vendor services
 
-#### Task Management (`TaskController.php`)
+#### Task Management (`TaskController.php`) [✓]
 - Purpose: Task CRUD and management operations
 - Endpoints:
   ```php
@@ -109,9 +117,38 @@
   - WeddingRepository
 - Used by: Frontend task services
 
-### 2. Entities (`src/Entity/`)
+#### Budget Management (`BudgetController.php`) [✓]
+- Purpose: Budget and expense management
+- Endpoints:
+  ```php
+  #[Route('/api/weddings/{id}/budget', methods: ['GET', 'POST', 'PUT'])]
+  #[Route('/api/weddings/{id}/expenses', methods: ['GET', 'POST'])]
+  #[Route('/api/weddings/{wedding}/expenses/{id}', methods: ['PUT', 'DELETE'])]
+  #[Route('/api/weddings/{id}/budget/summary', methods: ['GET'])]
+  ```
+- Dependencies:
+  - BudgetService
+  - ExpenseService
+  - WeddingRepository
+- Used by: Frontend budget services
 
-#### User Entity (`User.php`)
+#### Photo Gallery (`PhotoController.php`) [TODO]
+- Purpose: Photo management and gallery
+- Endpoints:
+  ```php
+  #[Route('/api/weddings/{id}/photos', methods: ['GET', 'POST'])]
+  #[Route('/api/weddings/{wedding}/photos/{id}', methods: ['GET', 'PUT', 'DELETE'])]
+  #[Route('/api/weddings/{wedding}/photos/{id}/metadata', methods: ['PUT'])]
+  ```
+- Dependencies:
+  - PhotoService
+  - FileService
+  - WeddingRepository
+- Used by: Frontend photo services (planned)
+
+### 2. Entities (`src/Entity/`) [✓]
+
+#### User Entity (`User.php`) [✓]
 - Properties:
   ```php
   private ?int $id;
@@ -120,16 +157,27 @@
   private array $roles;
   private ?string $firstName;
   private ?string $lastName;
+  private ?string $avatar;
+  private ?string $googleId;
+  private ?string $refreshToken;
+  private ?\DateTimeImmutable $tokenExpiresAt;
   private Collection $managedWeddings;
+  private Collection $invitations;
+  private ?Table $tableAssignment;
+  private ?array $preferences;
+  private \DateTimeImmutable $createdAt;
+  private \DateTimeImmutable $updatedAt;
   ```
 - Relationships:
   - OneToMany: managedWeddings
+  - OneToMany: invitations
+  - ManyToOne: tableAssignment
 - Used by:
   - AuthController
   - UserRepository
   - Security system
 
-#### Wedding Entity (`Wedding.php`)
+#### Wedding Entity (`Wedding.php`) [✓]
 - Properties:
   ```php
   private ?int $id;
@@ -150,7 +198,7 @@
   - GuestController
   - TableController
 
-#### Guest Entity (`Guest.php`)
+#### Guest Entity (`Guest.php`) [✓]
 - Properties:
   ```php
   private ?int $id;
@@ -171,7 +219,7 @@
   - RsvpController
   - TableController
 
-#### Table Entity (`Table.php`)
+#### Table Entity (`Table.php`) [✓]
 - Properties:
   ```php
   private ?int $id;
@@ -188,7 +236,7 @@
   - TableController
   - GuestController
 
-#### RsvpResponse Entity (`RsvpResponse.php`)
+#### RsvpResponse Entity (`RsvpResponse.php`) [✓]
 - Properties:
   ```php
   private ?int $id;
@@ -203,7 +251,7 @@
   - RsvpController
   - GuestController
 
-#### Vendor Entity (`Vendor.php`)
+#### Vendor Entity (`Vendor.php`) [✓]
 - Properties:
   ```php
   private ?int $id;
@@ -232,7 +280,7 @@
   - VendorRepository
   - WeddingController
 
-#### VendorFile Entity (`VendorFile.php`)
+#### VendorFile Entity (`VendorFile.php`) [✓]
 - Properties:
   ```php
   private ?int $id;
@@ -250,7 +298,7 @@
   - VendorController
   - FileService
 
-#### Task Entity (`Task.php`)
+#### Task Entity (`Task.php`) [✓]
 - Properties:
   ```php
   private ?int $id;
@@ -274,9 +322,74 @@
   - TaskRepository
   - TaskService
 
-### 3. Repositories (`src/Repository/`)
+#### Budget Entity (`Budget.php`) [✓]
+- Properties:
+  ```php
+  private ?int $id;
+  private ?Wedding $wedding;
+  private float $totalAmount;
+  private array $categoryAllocations;
+  private Collection $expenses;
+  private ?\DateTimeImmutable $createdAt;
+  private ?\DateTimeImmutable $updatedAt;
+  ```
+- Relationships:
+  - OneToOne: wedding
+  - OneToMany: expenses
+- Used by:
+  - BudgetController
+  - BudgetService
+  - ExpenseService
 
-#### User Repository (`UserRepository.php`)
+#### Expense Entity (`Expense.php`) [✓]
+- Properties:
+  ```php
+  private ?int $id;
+  private ?Budget $budget;
+  private ?Vendor $vendor;
+  private ?string $category;
+  private ?string $description;
+  private float $amount;
+  private string $type;
+  private string $status;
+  private ?float $paidAmount;
+  private ?\DateTimeImmutable $dueDate;
+  private ?\DateTimeImmutable $paidAt;
+  private bool $isVendorExpense;
+  private ?\DateTimeImmutable $createdAt;
+  private ?\DateTimeImmutable $updatedAt;
+  ```
+- Relationships:
+  - ManyToOne: budget
+  - ManyToOne: vendor
+- Used by:
+  - BudgetController
+  - ExpenseService
+  - VendorService
+
+#### Photo Entity (`Photo.php`) [TODO]
+- Properties:
+  ```php
+  private ?int $id;
+  private ?Wedding $wedding;
+  private ?string $filename;
+  private ?string $originalFilename;
+  private ?string $mimeType;
+  private ?int $size;
+  private array $metadata;
+  private ?\DateTimeImmutable $takenAt;
+  private ?\DateTimeImmutable $createdAt;
+  private ?\DateTimeImmutable $updatedAt;
+  ```
+- Relationships:
+  - ManyToOne: wedding
+- Used by:
+  - PhotoController (planned)
+  - PhotoService (planned)
+
+### 3. Repositories (`src/Repository/`) [✓]
+
+#### User Repository (`UserRepository.php`) [✓]
 - Methods:
   ```php
   public function findByEmail(string $email): ?User
@@ -287,7 +400,7 @@
   - AuthController
   - Security system
 
-#### Wedding Repository (`WeddingRepository.php`)
+#### Wedding Repository (`WeddingRepository.php`) [✓]
 - Methods:
   ```php
   public function findByAdmin(User $admin): array
@@ -300,7 +413,7 @@
   - GuestController
   - TableController
 
-#### Guest Repository (`GuestRepository.php`)
+#### Guest Repository (`GuestRepository.php`) [✓]
 - Methods:
   ```php
   public function findByWedding(Wedding $wedding): array
@@ -313,7 +426,7 @@
   - RsvpController
   - TableController
 
-#### Table Repository (`TableRepository.php`)
+#### Table Repository (`TableRepository.php`) [✓]
 - Methods:
   ```php
   public function findByWedding(Wedding $wedding): array
@@ -324,7 +437,7 @@
   - TableController
   - GuestController
 
-#### Vendor Repository (`VendorRepository.php`)
+#### Vendor Repository (`VendorRepository.php`) [✓]
 - Methods:
   ```php
   public function findByWedding(Wedding $wedding): array
@@ -335,7 +448,7 @@
   - VendorController
   - VendorService
 
-#### VendorFile Repository (`VendorFileRepository.php`)
+#### VendorFile Repository (`VendorFileRepository.php`) [✓]
 - Methods:
   ```php
   public function findByVendor(Vendor $vendor): array
@@ -345,7 +458,7 @@
   - VendorController
   - FileService
 
-#### Task Repository (`TaskRepository.php`)
+#### Task Repository (`TaskRepository.php`) [✓]
 - Methods:
   ```php
   public function findByWedding(Wedding $wedding): array
@@ -360,9 +473,44 @@
   - TaskController
   - TaskService
 
-### 4. Services (`src/Service/`)
+#### Budget Repository (`BudgetRepository.php`) [✓]
+- Methods:
+  ```php
+  public function findByWedding(Wedding $wedding): ?Budget
+  public function findWithExpenses(int $id): ?Budget
+  public function save(Budget $budget): void
+  ```
+- Used by:
+  - BudgetController
+  - BudgetService
 
-#### Authentication Service (`AuthService.php`)
+#### Expense Repository (`ExpenseRepository.php`) [✓]
+- Methods:
+  ```php
+  public function findByBudget(Budget $budget): array
+  public function findVendorExpenses(Vendor $vendor): array
+  public function findExpensesByCategory(Budget $budget): array
+  public function save(Expense $expense): void
+  ```
+- Used by:
+  - BudgetController
+  - ExpenseService
+  - VendorService
+
+#### Photo Repository (`PhotoRepository.php`) [TODO]
+- Methods:
+  ```php
+  public function findByWedding(Wedding $wedding): array
+  public function findByWeddingAndMetadata(Wedding $wedding, array $criteria): array
+  public function save(Photo $photo): void
+  ```
+- Used by:
+  - PhotoController (planned)
+  - PhotoService (planned)
+
+### 4. Services (`src/Service/`) [✓]
+
+#### Authentication Service (`AuthService.php`) [✓]
 - Methods:
   ```php
   public function login(string $email, string $password): string
@@ -377,7 +525,7 @@
   - AuthController
   - Security system
 
-#### Wedding Service (`WeddingService.php`)
+#### Wedding Service (`WeddingService.php`) [✓]
 - Methods:
   ```php
   public function create(array $data, User $admin): Wedding
@@ -391,7 +539,7 @@
 - Used by:
   - WeddingController
 
-#### Guest Service (`GuestService.php`)
+#### Guest Service (`GuestService.php`) [✓]
 - Methods:
   ```php
   public function create(Wedding $wedding, array $data): Guest
@@ -406,7 +554,7 @@
   - GuestController
   - RsvpController
 
-#### Table Service (`TableService.php`)
+#### Table Service (`TableService.php`) [✓]
 - Methods:
   ```php
   public function create(Wedding $wedding, array $data): Table
@@ -420,7 +568,7 @@
 - Used by:
   - TableController
 
-#### Vendor Service (`VendorService.php`)
+#### Vendor Service (`VendorService.php`) [✓]
 - Methods:
   ```php
   public function create(array $data, Wedding $wedding): Vendor
@@ -434,7 +582,7 @@
 - Used by:
   - VendorController
 
-#### Task Service (`TaskService.php`)
+#### Task Service (`TaskService.php`) [✓]
 - Methods:
   ```php
   public function getTask(int $id): ?Task
@@ -447,9 +595,50 @@
 - Used by:
   - TaskController
 
-### 5. Security (`src/Security/`)
+#### Budget Service (`BudgetService.php`) [✓]
+- Methods:
+  ```php
+  public function getBudget(Wedding $wedding): ?Budget
+  public function createBudget(Wedding $wedding, float $totalAmount, array $categoryAllocations): Budget
+  public function createExpenseFromVendor(Vendor $vendor): void
+  public function syncVendorExpenses(Vendor $vendor): void
+  ```
+- Dependencies:
+  - EntityManagerInterface
+  - ExpenseService
+- Used by:
+  - BudgetController
+  - VendorService
 
-#### JWT Authenticator (`JwtAuthenticator.php`)
+#### Expense Service (`ExpenseService.php`) [✓]
+- Methods:
+  ```php
+  public function createExpense(Budget $budget, ?Vendor $vendor, string $description, float $amount, string $type = 'other', string $status = 'pending'): Expense
+  public function updateExpenseStatus(Expense $expense, string $status, ?float $paidAmount = null): void
+  ```
+- Dependencies:
+  - EntityManagerInterface
+  - ExpenseRepository
+- Used by:
+  - BudgetService
+  - BudgetController
+
+#### Photo Service (`PhotoService.php`) [TODO]
+- Methods:
+  ```php
+  public function uploadPhoto(Wedding $wedding, UploadedFile $file, array $metadata): Photo
+  public function updateMetadata(Photo $photo, array $metadata): void
+  public function deletePhoto(Photo $photo): void
+  ```
+- Dependencies:
+  - PhotoRepository
+  - FileService
+- Used by:
+  - PhotoController (planned)
+
+### 5. Security (`src/Security/`) [✓]
+
+#### JWT Authenticator (`JwtAuthenticator.php`) [✓]
 - Purpose: Token authentication
 - Methods:
   ```php
@@ -461,20 +650,21 @@
   - Security system
   - All protected endpoints
 
-#### Voters
-- `WeddingVoter.php`
+#### Voters [✓]
+
+##### Wedding Voter (`WeddingVoter.php`) [✓]
   ```php
   public function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
   // Attributes: VIEW, EDIT, DELETE
   ```
 
-- `TableVoter.php`
+##### Table Voter (`TableVoter.php`) [✓]
   ```php
   public function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
   // Attributes: VIEW, EDIT, DELETE, ASSIGN_GUESTS
   ```
 
-- `GuestVoter.php`
+##### Guest Voter (`GuestVoter.php`) [✓]
   ```php
   public function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
   // Attributes: VIEW, EDIT, DELETE
@@ -491,6 +681,10 @@ CREATE TABLE user (
     password VARCHAR(255) NOT NULL,
     first_name VARCHAR(255),
     last_name VARCHAR(255),
+    avatar VARCHAR(255),
+    google_id VARCHAR(255),
+    refresh_token VARCHAR(255),
+    token_expires_at DATETIME,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL
 );
