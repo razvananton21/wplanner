@@ -8,8 +8,7 @@ services:
       args:
         - NODE_ENV=production
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - frontend_build:/usr/share/nginx/html
