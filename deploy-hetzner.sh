@@ -66,20 +66,27 @@ cp .env.production .env
 echo "🌐 Setting up Docker network..."
 docker network create wplanner-network || true
 
-# Build and start production containers
-echo "🏗️ Building production containers..."
-echo "   Building frontend (this might take a few minutes)..."
-docker-compose -f docker-compose.prod.yml build frontend
-echo "   Building backend..."
-docker-compose -f docker-compose.prod.yml build backend
-
 # Stop existing containers
 echo "🛑 Stopping existing containers..."
 docker-compose -f docker-compose.prod.yml down
 
-# Start new containers
-echo "🚀 Starting production containers..."
-docker-compose -f docker-compose.prod.yml up -d
+# Start services in sequence
+echo "🚀 Starting services in sequence..."
+
+echo "   Starting database..."
+docker-compose -f docker-compose.prod.yml up -d database
+echo "   Waiting for database to be ready..."
+sleep 15
+
+echo "   Starting backend..."
+docker-compose -f docker-compose.prod.yml up -d backend
+echo "   Waiting for backend to be ready..."
+sleep 5
+
+echo "   Starting frontend..."
+docker-compose -f docker-compose.prod.yml up -d frontend
+echo "   Waiting for frontend to be ready..."
+sleep 5
 
 # Verify frontend is accessible
 echo "🔍 Verifying frontend access..."
