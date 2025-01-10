@@ -25,6 +25,12 @@ services:
       args:
         - APP_ENV=prod
         - APP_DEBUG=0
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - backend_uploads:/var/www/html/public/uploads
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     environment:
       - APP_ENV=prod
       - APP_DEBUG=0
@@ -39,8 +45,7 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
-    volumes:
-      - backend_uploads:/var/www/html/public/uploads
+      - APACHE_DOCUMENT_ROOT=/var/www/html/public
     depends_on:
       - database
     restart: unless-stopped
