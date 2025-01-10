@@ -5,6 +5,7 @@ import {
   Typography,
   Card,
   CardContent,
+  CardMedia,
   Grid,
   Button,
   IconButton,
@@ -13,17 +14,18 @@ import {
   useTheme,
   useMediaQuery,
   Fade,
-  Divider,
   CircularProgress,
   Alert,
+  Fab,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Add as AddIcon,
   CalendarMonth as CalendarIcon,
   LocationOn as LocationIcon,
-  Visibility as ViewIcon,
-  Edit as EditIcon,
   People as PeopleIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import weddingService from '../../services/weddingService';
@@ -32,19 +34,30 @@ const WeddingList = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
-  const [weddings, setWeddings] = useState([]);
+  const [weddings, setWeddings] = useState({ owned: [], invited: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     const fetchWeddings = async () => {
       try {
         setLoading(true);
         const data = await weddingService.getWeddings();
-        // Filter out deleted weddings and sort by date
-        const activeWeddings = data.managed
-          .filter(wedding => !wedding.deletedAt)
-          .sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Ensure we have both arrays, even if empty
+        const activeWeddings = {
+          owned: Array.isArray(data.managed) 
+            ? data.managed
+                .filter(wedding => !wedding.deletedAt)
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+            : [],
+          invited: Array.isArray(data.invited)
+            ? data.invited
+                .filter(wedding => !wedding.deletedAt)
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+            : [],
+        };
         setWeddings(activeWeddings);
         setError(null);
       } catch (err) {
@@ -62,71 +75,268 @@ const WeddingList = () => {
     navigate('/weddings/new');
   };
 
-  const handleViewDetails = (id) => {
-    navigate(`/weddings/${id}`);
+  const handleViewDetails = (wedding) => {
+    navigate(`/weddings/${wedding.id}`);
   };
 
   const handleEditWedding = (id) => {
     navigate(`/weddings/${id}`, { state: { startEditing: true } });
   };
 
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const WeddingCard = ({ wedding, isOwned }) => (
+    <Card
+      elevation={0}
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        borderRadius: '20px',
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.3s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0px 8px 25px rgba(0, 0, 0, 0.08)',
+          '& .MuiCardMedia-root': {
+            transform: 'scale(1.05)',
+          },
+        },
+      }}
+      onClick={() => handleViewDetails(wedding)}
+    >
+      <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+        {wedding.coverImage ? (
+          <CardMedia
+            component="img"
+            height="200"
+            image={wedding.coverImage}
+            alt={wedding.title}
+            sx={{
+              transition: 'transform 0.3s ease-in-out',
+            }}
+          />
+        ) : (
+          <Box
+            sx={{
+              height: 200,
+              background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+            }}
+          />
+        )}
+      </Box>
+      <CardContent 
+        sx={{ 
+          p: 2.5,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            fontSize: '1.1rem',
+            color: 'text.primary',
+          }}
+        >
+          {wedding.title}
+        </Typography>
+        
+        <Stack spacing={1.5}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <CalendarIcon sx={{ fontSize: '1.1rem', color: 'text.secondary' }} />
+            <Typography variant="body2" color="text.secondary">
+              {format(new Date(wedding.date), 'MMM d, yyyy')}
+            </Typography>
+          </Stack>
+          
+          {wedding.guestCount && (
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <PeopleIcon sx={{ fontSize: '1.1rem', color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary">
+                {wedding.guestCount} Guests
+              </Typography>
+            </Stack>
+          )}
+          
+          {wedding.venue && (
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <LocationIcon sx={{ fontSize: '1.1rem', color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {wedding.venue}
+              </Typography>
+            </Stack>
+          )}
+        </Stack>
+
+        <Button
+          variant="outlined"
+          size="small"
+          sx={{
+            mt: 'auto',
+            borderRadius: '10px',
+            textTransform: 'none',
+            borderWidth: '1.5px',
+            '&:hover': {
+              borderWidth: '1.5px',
+            },
+          }}
+        >
+          View Details
+        </Button>
+        
+        {isOwned && (
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditWedding(wedding.id);
+            }}
+            sx={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              bgcolor: 'background.paper',
+              boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+              width: 32,
+              height: 32,
+              '&:hover': {
+                bgcolor: 'background.paper',
+              },
+            }}
+          >
+            <EditIcon sx={{ fontSize: '1.1rem' }} />
+          </IconButton>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   if (loading) {
     return (
-      <Box 
-        display="flex" 
-        justifyContent="center" 
-        alignItems="center" 
-        minHeight="50vh"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
         <CircularProgress />
       </Box>
     );
   }
 
+  const hasAnyWeddings = weddings.owned.length > 0 || weddings.invited.length > 0;
+
   return (
     <Fade in timeout={800}>
-      <Box sx={{ pb: isMobile ? 8 : 3 }}>
+      <Box sx={{ pb: 3 }}>
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
             mb: 4,
             px: isMobile ? 2 : 0,
-            position: 'sticky',
-            top: 0,
-            bgcolor: 'background.default',
-            zIndex: 1,
-            py: 2,
           }}
         >
-          <Typography
-            variant={isMobile ? 'h5' : 'h4'}
+          <Box
             sx={{
-              fontWeight: 700,
-              background: `linear-gradient(120deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 4,
+              pt: 2,
             }}
           >
-            My Weddings
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreateWedding}
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: '"Cormorant Garamond", serif',
+                fontWeight: 500,
+                fontSize: isMobile ? '1.75rem' : '2.25rem',
+                color: 'primary.main',
+                textAlign: 'center',
+                letterSpacing: '0.02em',
+                mb: 0.5,
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: -8,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '40px',
+                  height: '2px',
+                  background: `linear-gradient(90deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+                  borderRadius: '2px',
+                },
+              }}
+            >
+              Upcoming Weddings
+            </Typography>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 400,
+                fontSize: '0.95rem',
+                mt: 2,
+                opacity: 0.9,
+                maxWidth: '600px',
+                textAlign: 'center',
+                px: 2,
+              }}
+            >
+              Plan and manage your special day with ease
+            </Typography>
+          </Box>
+
+          <Box
             sx={{
-              background: `linear-gradient(120deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              color: 'white',
-              '&:hover': {
-                background: `linear-gradient(120deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
-              },
-              minWidth: isMobile ? 'auto' : undefined,
-              px: isMobile ? 2 : 3,
+              display: 'flex',
+              justifyContent: 'center',
+              mb: 4,
             }}
           >
-            {isMobile ? 'Add' : 'Create Wedding'}
-          </Button>
+            <Box
+              sx={{
+                bgcolor: 'background.paper',
+                borderRadius: '16px',
+                p: 0.5,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Tabs
+                value={tabValue}
+                onChange={handleTabChange}
+                sx={{
+                  minHeight: 44,
+                  '& .MuiTab-root': {
+                    fontSize: '0.9rem',
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minWidth: 120,
+                    minHeight: 44,
+                    borderRadius: '12px',
+                    color: 'text.secondary',
+                    '&.Mui-selected': {
+                      color: 'text.primary',
+                      fontWeight: 600,
+                      backgroundColor: 'primary.light',
+                    },
+                  },
+                  '& .MuiTabs-indicator': {
+                    display: 'none',
+                  },
+                }}
+              >
+                <Tab label="My Wedding" />
+                <Tab label="Invited" />
+              </Tabs>
+            </Box>
+          </Box>
         </Box>
 
         {error && (
@@ -139,160 +349,91 @@ const WeddingList = () => {
           </Alert>
         )}
 
-        <Grid container spacing={isMobile ? 2 : 3}>
-          {weddings.map((wedding, index) => (
-            <Grid item xs={12} sm={6} md={4} key={wedding.id}>
-              <Card
-                elevation={0}
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  overflow: 'visible',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: `linear-gradient(120deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                    borderRadius: '16px 16px 0 0',
-                  },
-                }}
-              >
-                <CardContent sx={{ flex: 1, p: isMobile ? 2 : 3 }}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 600,
-                        mb: 1,
-                        color: theme.palette.text.primary,
-                        fontSize: isMobile ? '1.1rem' : undefined,
-                      }}
-                    >
-                      {wedding.title}
-                    </Typography>
-                    <Stack 
-                      direction={isMobile ? 'column' : 'row'} 
-                      spacing={isMobile ? 1 : 2} 
-                      sx={{ mb: 2 }}
-                    >
-                      <Chip
-                        icon={<CalendarIcon />}
-                        label={format(new Date(wedding.date), 'MMM d, yyyy')}
-                        size="small"
-                        sx={{
-                          bgcolor: 'rgba(45, 48, 71, 0.05)',
-                          color: theme.palette.text.secondary,
-                          width: isMobile ? 'fit-content' : undefined,
-                        }}
-                      />
-                      {wedding.venue && (
-                        <Chip
-                          icon={<LocationIcon />}
-                          label={wedding.venue}
-                          size="small"
-                          sx={{
-                            bgcolor: 'rgba(232, 95, 92, 0.05)',
-                            color: theme.palette.text.secondary,
-                            width: isMobile ? 'fit-content' : undefined,
-                          }}
-                        />
-                      )}
-                    </Stack>
-                    {wedding.description && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          mb: 2,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {wedding.description}
-                      </Typography>
-                    )}
-                  </Box>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{
-                      mt: 'auto',
-                      pt: 2,
-                      borderTop: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Button
-                      startIcon={<ViewIcon />}
-                      onClick={() => handleViewDetails(wedding.id)}
-                      size={isMobile ? 'medium' : 'small'}
-                      sx={{ 
-                        flex: 1,
-                        height: isMobile ? 40 : undefined,
-                      }}
-                    >
-                      View Details
-                    </Button>
-                    <IconButton
-                      size={isMobile ? 'medium' : 'small'}
-                      onClick={() => handleEditWedding(wedding.id)}
-                      sx={{ 
-                        color: theme.palette.text.secondary,
-                        width: isMobile ? 40 : 32,
-                        height: isMobile ? 40 : 32,
-                      }}
-                    >
-                      <EditIcon fontSize={isMobile ? 'small' : 'inherit'} />
-                    </IconButton>
-                  </Stack>
-                </CardContent>
-              </Card>
-              {isMobile && index < weddings.length - 1 && (
-                <Divider sx={{ my: 2 }} />
-              )}
-            </Grid>
-          ))}
-        </Grid>
-
-        {!loading && weddings.length === 0 && (
+        {!hasAnyWeddings && tabValue === 0 ? (
           <Box
             sx={{
               textAlign: 'center',
               py: 8,
               px: 2,
-              bgcolor: 'background.paper',
-              borderRadius: 2,
-              mt: 4,
             }}
           >
             <Typography variant="h6" color="text.secondary" gutterBottom>
               No weddings yet
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Create your first wedding to get started with planning
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+              Start by creating your first wedding
             </Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleCreateWedding}
               sx={{
-                background: `linear-gradient(120deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                color: 'white',
-                '&:hover': {
-                  background: `linear-gradient(120deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
-                },
+                height: 48,
+                borderRadius: '12px',
+                px: 4,
               }}
             >
               Create Wedding
             </Button>
           </Box>
+        ) : (
+          <Box sx={{ px: isMobile ? 2 : 0 }}>
+            <Grid container spacing={3}>
+              {(tabValue === 0 ? weddings.owned : weddings.invited).map((wedding) => (
+                <Grid item xs={12} sm={6} md={4} key={wedding.id}>
+                  <WeddingCard wedding={wedding} isOwned={tabValue === 0} />
+                </Grid>
+              ))}
+              {tabValue === 1 && weddings.invited.length === 0 && (
+                <Grid item xs={12}>
+                  <Box sx={{ textAlign: 'center', py: 8 }}>
+                    <Typography variant="h6" color="text.secondary">
+                      No invitations yet
+                    </Typography>
+                  </Box>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        )}
+
+        {tabValue === 0 && (
+          isMobile ? (
+            <Fab
+              color="primary"
+              aria-label="add wedding"
+              onClick={handleCreateWedding}
+              sx={{
+                position: 'fixed',
+                bottom: 24,
+                right: 24,
+                zIndex: 1000,
+                bgcolor: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: theme.palette.primary.dark,
+                },
+              }}
+            >
+              <AddIcon />
+            </Fab>
+          ) : (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateWedding}
+              sx={{
+                position: 'fixed',
+                bottom: 32,
+                right: 32,
+                zIndex: 1000,
+                height: 48,
+                borderRadius: '12px',
+                px: 4,
+              }}
+            >
+              Create Wedding
+            </Button>
+          )
         )}
       </Box>
     </Fade>
