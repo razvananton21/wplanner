@@ -284,9 +284,79 @@ autonomous_workflow:
       - UI/UX patterns followed
       - Responsive design maintained
 
+  documentation_maintenance:
+    update_triggers:
+      - feature_completion:
+          when: "After completing implementation of any feature"
+          prompt: "Should we update the documentation to reflect these new features?"
+      
+      - architectural_changes:
+          when: "After making changes to project structure or patterns"
+          prompt: "The project architecture has changed. Should we update the documentation to reflect these changes?"
+      
+      - dependency_updates:
+          when: "After adding or updating project dependencies"
+          prompt: "Project dependencies have changed. Should we update the technical documentation?"
+      
+      - workflow_changes:
+          when: "After modifying development or deployment workflows"
+          prompt: "Development workflows have been modified. Should we update the process documentation?"
+      
+      - status_changes:
+          when: "After changing feature status ([TODO] → [WIP] → [✓])"
+          prompt: "Feature status has changed. Should we update the roadmap and status documentation?"
+      
+      - mobile_specific:
+          when: "After any mobile-related changes or decisions"
+          prompt: "Mobile implementation details have changed. Should we update the mobile strategy documentation?"
+      
+      - api_changes:
+          when: "After modifying or adding API endpoints"
+          prompt: "API changes detected. Should we update the endpoint documentation?"
+      
+      - performance_updates:
+          when: "After implementing performance improvements"
+          prompt: "Performance optimizations have been made. Should we update the technical considerations?"
+
+    files_to_update:
+      - docs/CONTEXT.md:
+        - Implementation Status Overview
+        - Feature status updates
+      - docs/roadmap.md:
+        - Current Implementation Status
+        - Development Phases
+        - Success Metrics if applicable
+      - docs/codebase_part*.md:
+        - Architecture changes
+        - New patterns introduced
+        - Component documentation
+      - docs/ENDPOINTS.md:
+        - New endpoints
+        - Modified endpoints
+        - New parameters or responses
+      - docs/MOBILE_STRATEGY.md:
+        - Mobile-specific features
+        - Platform considerations
+        - Testing requirements
+
+    update_rules:
+      - Update all status markers ([✓], [WIP], [TODO])
+      - Add new features to relevant sections
+      - Document any new patterns or approaches
+      - Update technical considerations
+      - Reflect changes in implementation status
+      - Add new limitations or considerations
+
+    verification:
+      - All affected files are updated
+      - Status markers are consistent
+      - New features are properly documented
+      - Cross-references are maintained
+      - Documentation remains clear and concise
+
   safety_measures:
     - Never modify existing functionality without explicit request
     - Always follow established patterns exactly
     - Implement complete feature vertical slice
     - Maintain consistent naming and structure
-    - Include all necessary tests and validation 
+    - Include all necessary tests and validation
