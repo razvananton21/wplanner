@@ -3,22 +3,22 @@ FROM node:18-alpine as base
 # Set working directory
 WORKDIR /app
 
-# Add package files
-COPY package*.json ./
-
 # Development stage
 FROM base as development
+# Copy package files first to leverage layer caching
+COPY package*.json ./
 RUN npm install
 COPY . .
 CMD ["npm", "run", "dev"]
 
 # Build stage
 FROM base as builder
+# Copy package files first to leverage layer caching
+COPY package*.json ./
 RUN npm install
+# Copy source files and env file in one layer
 COPY . .
-# Copy the production env file
-COPY .env.production .env
-RUN npm run build
+RUN mv .env.production .env && npm run build
 
 # Production stage
 FROM nginx:alpine as production
