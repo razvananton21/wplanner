@@ -103,12 +103,17 @@ class AuthController extends AbstractController
         ]);
     }
 
-    #[Route('/google/callback', name: 'app_auth_google_callback', methods: ['POST'])]
+    #[Route('/google/callback', name: 'app_auth_google_callback', methods: ['GET', 'POST'])]
     public function handleGoogleCallback(Request $request): JsonResponse
     {
         try {
-            $payload = json_decode($request->getContent(), true);
-            $code = $payload['code'] ?? null;
+            // Handle both GET (from Google) and POST (from frontend) requests
+            if ($request->isMethod('POST')) {
+                $payload = json_decode($request->getContent(), true);
+                $code = $payload['code'] ?? null;
+            } else {
+                $code = $request->query->get('code');
+            }
 
             if (!$code) {
                 throw new AuthenticationException('No authorization code provided');

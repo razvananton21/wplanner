@@ -4,7 +4,8 @@ const getApiUrl = () => {
     // Use window.location to determine the current domain
     const isProduction = window.location.hostname !== 'localhost';
     if (isProduction) {
-      return `https://${window.location.hostname}/api`;
+      // Explicitly return the production URL
+      return 'https://wplanner.188.245.244.213.nip.io/api';
     }
   }
   
