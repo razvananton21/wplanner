@@ -1,11 +1,15 @@
 const getApiUrl = () => {
-  // In development, use the proxy setup
-  if (import.meta.env.DEV) {
-    return '/api';
+  // Check if we're in a browser environment
+  if (typeof window !== 'undefined') {
+    // Use window.location to determine the current domain
+    const isProduction = window.location.hostname !== 'localhost';
+    if (isProduction) {
+      return `https://${window.location.hostname}/api`;
+    }
   }
   
-  // In production, use the environment variable
-  return import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  // Development fallback
+  return '/api';
 };
 
 export const API_URL = getApiUrl();
