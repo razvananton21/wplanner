@@ -57,15 +57,20 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - type: volume
+        source: mysql_data
+        target: /var/lib/mysql
     restart: unless-stopped
     networks:
       - wplanner-network
 
 volumes:
   mysql_data:
+    driver: local
   backend_uploads:
+    driver: local
   frontend_build:
+    driver: local
 
 networks:
   wplanner-network:
