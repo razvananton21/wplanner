@@ -229,9 +229,11 @@ autonomous_workflow:
       - Log command execution results
 
   conversation_start: |
-    To initialize a new conversation, share this message:
-    "Please initialize project understanding based on .cursorrules and follow the autonomous workflow for our conversation about WPlanner."
-    This will trigger:
+    To initialize a new conversation, you can use either:
+    1. Short version: "Gain context please."
+    2. Long version: "Please initialize project understanding based on .cursorrules and follow the autonomous workflow for our conversation about WPlanner."
+    
+    Both commands are equivalent and will trigger:
     1. Complete documentation review
     2. Pattern recognition
     3. Safety measures activation
