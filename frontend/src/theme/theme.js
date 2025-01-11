@@ -3,9 +3,9 @@ import { createTheme, alpha } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#687F6C',
-      light: '#8A9E8E',
-      dark: '#4E614F',
+      main: '#4A5D4E',
+      light: '#687F6C',
+      dark: '#364139',
       contrastText: '#FFFFFF',
     },
     secondary: {
@@ -25,19 +25,20 @@ const theme = createTheme({
       champagne: '#F7E7CE',
     },
     background: {
-      default: '#F9F6F0',
+      default: '#FDFBF7',
       paper: '#FFFFFF',
-      pattern: 'rgba(104, 127, 108, 0.03)',
+      pattern: 'rgba(74, 93, 78, 0.02)',
       gradient: {
-        primary: 'linear-gradient(135deg, #FFFFFF 0%, #F9F6F0 100%)',
+        primary: 'linear-gradient(135deg, #FFFFFF 0%, #F7E7CE 100%)',
         accent: 'linear-gradient(135deg, #F7E7CE 0%, #FFFFFF 100%)',
         blush: 'linear-gradient(135deg, #F2D6D6 0%, #FFFFFF 100%)',
       },
     },
     text: {
       primary: '#2C362C',
-      secondary: '#767D76',
-      accent: '#B69B6B',
+      secondary: '#5C5C5C',
+      accent: '#7A6F63',
+      muted: '#8F8F8F',
     },
   },
   typography: {
@@ -48,7 +49,7 @@ const theme = createTheme({
       fontWeight: 600,
       lineHeight: 1.2,
       letterSpacing: '-0.02em',
-      color: '#2C362C',
+      color: '#1A1A1A',
       '@media (max-width:600px)': {
         fontSize: '2rem',
       },
@@ -59,7 +60,7 @@ const theme = createTheme({
       fontWeight: 600,
       lineHeight: 1.2,
       letterSpacing: '-0.01em',
-      color: '#2C362C',
+      color: '#1A1A1A',
       '@media (max-width:600px)': {
         fontSize: '1.75rem',
       },
@@ -69,18 +70,37 @@ const theme = createTheme({
       fontSize: '1.75rem',
       fontWeight: 600,
       lineHeight: 1.2,
-      color: '#2C362C',
+      color: '#1A1A1A',
       '@media (max-width:600px)': {
         fontSize: '1.5rem',
       },
+    },
+    h6: {
+      fontFamily: '"Cormorant Garamond", serif',
+      fontSize: '1.25rem',
+      fontWeight: 600,
+      fontStyle: 'italic',
+      lineHeight: 1.2,
+      color: '#7A6F63',
+      letterSpacing: '0.01em',
     },
     subtitle1: {
       fontSize: '1rem',
       lineHeight: 1.5,
       letterSpacing: '0.01em',
-      color: '#767D76',
+      color: '#5C5C5C',
+      fontWeight: 500,
       '@media (max-width:600px)': {
         fontSize: '0.9375rem',
+      },
+    },
+    subtitle2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.4,
+      letterSpacing: '0.01em',
+      color: '#8F8F8F',
+      '@media (max-width:600px)': {
+        fontSize: '0.8125rem',
       },
     },
   },
@@ -96,11 +116,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: '28px',
-          boxShadow: '0px 8px 24px rgba(104, 127, 108, 0.08)',
+          boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.06)',
           transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
           '&:hover': {
-            transform: 'translateY(-8px) scale(1.02)',
-            boxShadow: '0px 16px 40px rgba(104, 127, 108, 0.16)',
+            transform: 'translateY(-4px)',
+            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.08)',
           },
           background: 'linear-gradient(135deg, #FFFFFF 0%, #F7E7CE 8%, #FFFFFF 100%)',
           border: '1px solid rgba(212, 185, 140, 0.12)',
@@ -108,6 +128,17 @@ const theme = createTheme({
           overflow: 'hidden',
           '@media (max-width:600px)': {
             borderRadius: '24px',
+          },
+          '& .MuiTypography-root': {
+            '&.card-title': {
+              color: '#5C5C5C',
+              fontWeight: 600,
+              fontSize: '1rem',
+            },
+            '&.card-subtitle': {
+              color: '#8F8F8F',
+              fontSize: '0.875rem',
+            },
           },
         },
       },
@@ -122,11 +153,11 @@ const theme = createTheme({
           fontWeight: 600,
           letterSpacing: '0.02em',
           textTransform: 'none',
-          boxShadow: '0px 4px 16px rgba(104, 127, 108, 0.16)',
+          boxShadow: '0px 4px 12px rgba(212, 185, 140, 0.16)',
           transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
           '&:hover': {
-            transform: 'translateY(-2px) scale(1.02)',
-            boxShadow: '0px 8px 24px rgba(104, 127, 108, 0.24)',
+            transform: 'translateY(-2px)',
+            boxShadow: '0px 6px 16px rgba(212, 185, 140, 0.24)',
           },
           '@media (max-width:600px)': {
             width: '100%',
@@ -168,7 +199,7 @@ const theme = createTheme({
           minHeight: '48px',
           padding: '12px 24px',
           borderRadius: '24px',
-          color: '#767D76',
+          color: '#5C665C',
           fontWeight: 600,
           fontSize: '0.9375rem',
           letterSpacing: '0.02em',
@@ -206,23 +237,6 @@ const theme = createTheme({
           '@media (max-width:600px)': {
             width: '48px',
             height: '48px',
-          },
-          '@keyframes pulse': {
-            '0%': {
-              boxShadow: '0px 4px 16px rgba(212, 185, 140, 0.24)',
-              transform: 'scale(1)',
-            },
-            '50%': {
-              boxShadow: '0px 8px 24px rgba(212, 185, 140, 0.32)',
-              transform: 'scale(1.05)',
-            },
-            '100%': {
-              boxShadow: '0px 4px 16px rgba(212, 185, 140, 0.24)',
-              transform: 'scale(1)',
-            },
-          },
-          '&.pulse': {
-            animation: 'pulse 2s infinite cubic-bezier(0.34, 1.56, 0.64, 1)',
           },
         },
         primary: {
@@ -327,6 +341,45 @@ const theme = createTheme({
         bar: {
           borderRadius: '8px',
           backgroundImage: 'linear-gradient(135deg, #E8D5B5 0%, #D4B98C 100%)',
+        },
+      },
+    },
+    MuiListItemText: {
+      styleOverrides: {
+        primary: {
+          color: '#5C5C5C',
+          fontWeight: 600,
+          fontSize: '1rem',
+        },
+        secondary: {
+          color: '#8F8F8F',
+          fontSize: '0.875rem',
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          '&.section-title': {
+            color: '#7A6F63',
+            fontFamily: '"Cormorant Garamond", serif',
+            fontWeight: 600,
+            fontStyle: 'italic',
+            fontSize: '1.25rem',
+            letterSpacing: '0.01em',
+            marginBottom: '1rem',
+          },
+          '&.list-item-title': {
+            color: '#5C5C5C',
+            fontWeight: 600,
+            fontSize: '1rem',
+            letterSpacing: '0.01em',
+          },
+          '&.list-item-subtitle': {
+            color: '#8F8F8F',
+            fontSize: '0.875rem',
+            letterSpacing: '0.01em',
+          },
         },
       },
     },

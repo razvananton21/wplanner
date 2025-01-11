@@ -84,6 +84,8 @@ const ResponsiveLayout = ({ children }) => {
               border: 'none',
               background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF9F7 100%)',
               boxShadow: '4px 0px 20px rgba(0, 0, 0, 0.05)',
+              mt: { xs: '64px', sm: '72px' },
+              height: { xs: 'calc(100% - 64px)', sm: 'calc(100% - 72px)' },
             },
           }}
         >
@@ -97,6 +99,7 @@ const ResponsiveLayout = ({ children }) => {
           p: { xs: 0, sm: 3 },
           width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
           ml: { sm: `${DRAWER_WIDTH}px` },
+          mt: { xs: '64px', sm: '72px' },
         }}
       >
         {children}
