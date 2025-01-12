@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   Box,
@@ -37,15 +37,28 @@ import {
   CalendarToday as CalendarTodayIcon,
 } from '@mui/icons-material';
 import weddingService from '../../services/weddingService';
+import GuestList from '../guests/GuestList';
 
 const WeddingDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
   const [wedding, setWedding] = useState(null);
-  const [viewMode, setViewMode] = useState('list'); // Changed from 'grid' to 'list'
+  const [error, setError] = useState(null);
+  
+  // Get the section from the URL path
+  const section = location.pathname.split('/').pop();
+  const [activeTab, setActiveTab] = useState(section || 'details');
+
+  useEffect(() => {
+    // Update activeTab when the section changes
+    setActiveTab(section || 'details');
+  }, [section]);
+
+  const [viewMode, setViewMode] = useState('list');
   const [expandedSections, setExpandedSections] = useState({
     planning: true,
     people: true,
@@ -87,16 +100,20 @@ const WeddingDetails = () => {
   ];
 
   const handleNavigate = (path) => {
+    if (path === 'details') {
+      navigate(`/weddings/${id}/edit`);
+      return;
+    }
+    if (path === 'guests') {
+      navigate(`/weddings/${id}/guests`);
+      return;
+    }
     if (id === 'new') {
-      // First create the wedding, then navigate
-      // This is where you'd call your API to create the wedding
       console.log('Creating new wedding...');
       return;
     }
     navigate(`/weddings/${id}/${path}`);
   };
-
-  const [activeTab, setActiveTab] = useState('details');
 
   const calculateDaysUntil = (date) => {
     if (!date) return null;
@@ -682,6 +699,38 @@ const WeddingDetails = () => {
     }));
   };
 
+  const renderSection = () => {
+    switch (activeTab) {
+      case 'details':
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Wedding Details
+            </Typography>
+            {/* Add your details section content here */}
+          </Box>
+        );
+      case 'guests':
+        return <GuestList weddingId={id} />;
+      case 'timeline':
+      case 'tasks':
+      case 'vendors':
+      case 'tables':
+      case 'rsvp-form':
+      case 'invitation':
+      case 'budget':
+        return (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary">
+              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} section is coming soon
+            </Typography>
+          </Box>
+        );
+      default:
+        return null;
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -1238,7 +1287,22 @@ const WeddingDetails = () => {
 
         {/* Content Section */}
         <Box sx={{ mt: 4, px: isMobile ? 2 : 4 }}>
-          {/* The content for each tab will be rendered here */}
+          {activeTab === 'guests' ? (
+            <GuestList weddingId={id} />
+          ) : activeTab === 'details' ? (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Wedding Details
+              </Typography>
+              {/* Add your details section content here */}
+            </Box>
+          ) : (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="h6" color="text.secondary">
+                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} section is coming soon
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
     </Fade>

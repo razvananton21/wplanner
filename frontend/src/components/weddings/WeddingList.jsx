@@ -394,7 +394,7 @@ const WeddingList = () => {
 
   return (
     <Fade in timeout={800}>
-      <Box sx={{ pb: { xs: 8, sm: 3 } }}>
+      <Box sx={{ pb: 3 }}>
         <Box
           sx={{
             mb: { xs: 4, sm: 6 },

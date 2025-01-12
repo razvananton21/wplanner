@@ -284,4 +284,44 @@ class GuestController extends AbstractController
             ]
         ]);
     }
+
+    #[Route('/weddings/{wedding}/guests/{id}', name: 'app_guests_get', methods: ['GET'])]
+    #[IsGranted('view', subject: 'wedding')]
+    public function get(Wedding $wedding, Guest $guest): JsonResponse
+    {
+        if ($guest->getWedding() !== $wedding) {
+            throw $this->createNotFoundException('Guest not found in this wedding');
+        }
+
+        return $this->json([
+            'data' => [
+                'id' => $guest->getId(),
+                'firstName' => $guest->getFirstName(),
+                'lastName' => $guest->getLastName(),
+                'email' => $guest->getEmail(),
+                'category' => $guest->getCategory(),
+                'status' => $guest->getStatus(),
+                'dietaryRestrictions' => $guest->getDietaryRestrictions(),
+                'plusOne' => $guest->canBringPlusOne(),
+                'table' => $guest->getTable()?->getId(),
+                'plusOneOf' => $guest->getPlusOneOf()?->getId(),
+                'plusOnes' => $guest->getPlusOnes()->map(fn($g) => $g->getId())->toArray(),
+                'deletedAt' => $guest->getDeletedAt()?->format('c'),
+                'responses' => array_map(function($response) {
+                    if (!$response || !$response->getField()) {
+                        return null;
+                    }
+                    return [
+                        'id' => $response->getId(),
+                        'field' => [
+                            'id' => $response->getField()->getId(),
+                            'label' => $response->getField()->getLabel(),
+                            'type' => $response->getField()->getType()
+                        ],
+                        'value' => $response->getValue()
+                    ];
+                }, $guest->getRsvpResponses()->toArray())
+            ]
+        ]);
+    }
 } 
