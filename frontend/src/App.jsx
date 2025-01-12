@@ -9,6 +9,7 @@ import Header from './components/layout/Header';
 import EditWeddingPage from './components/weddings/EditWeddingPage';
 import GuestsPage from './components/guests/GuestsPage';
 import EditGuestPage from './components/guests/EditGuestPage';
+import TimelinePage from './components/timeline/TimelinePage';
 
 const App = () => {
   const location = useLocation();
@@ -32,6 +33,7 @@ const App = () => {
             <Route path="/weddings/:id/edit" element={<EditWeddingPage />} />
             <Route path="/weddings/:id/guests" element={<GuestsPage />} />
             <Route path="/weddings/:id/guests/:guestId/edit" element={<EditGuestPage />} />
+            <Route path="/weddings/:id/timeline" element={<TimelinePage />} />
             <Route path="/weddings/:id/:section" element={<WeddingDetails />} />
             <Route path="/calendar" element={<div>Calendar View (Coming Soon)</div>} />
             <Route path="/guests" element={<div>Guest Management (Coming Soon)</div>} />

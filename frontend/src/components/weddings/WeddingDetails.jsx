@@ -38,6 +38,7 @@ import {
 } from '@mui/icons-material';
 import weddingService from '../../services/weddingService';
 import GuestList from '../guests/GuestList';
+import Timeline from '../timeline/Timeline';
 
 const WeddingDetails = () => {
   const { id } = useParams();
@@ -106,6 +107,10 @@ const WeddingDetails = () => {
     }
     if (path === 'guests') {
       navigate(`/weddings/${id}/guests`);
+      return;
+    }
+    if (path === 'timeline') {
+      navigate(`/weddings/${id}/timeline`);
       return;
     }
     if (id === 'new') {
@@ -712,17 +717,17 @@ const WeddingDetails = () => {
         );
       case 'guests':
         return <GuestList weddingId={id} />;
-      case 'timeline':
       case 'tasks':
       case 'vendors':
       case 'tables':
       case 'rsvp-form':
       case 'invitation':
       case 'budget':
+      case 'timeline':
         return (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="h6" color="text.secondary">
-              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} section is coming soon
+              Coming soon
             </Typography>
           </Box>
         );
@@ -1287,22 +1292,7 @@ const WeddingDetails = () => {
 
         {/* Content Section */}
         <Box sx={{ mt: 4, px: isMobile ? 2 : 4 }}>
-          {activeTab === 'guests' ? (
-            <GuestList weddingId={id} />
-          ) : activeTab === 'details' ? (
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Wedding Details
-              </Typography>
-              {/* Add your details section content here */}
-            </Box>
-          ) : (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary">
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} section is coming soon
-              </Typography>
-            </Box>
-          )}
+          {renderSection()}
         </Box>
       </Box>
     </Fade>
