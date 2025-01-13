@@ -19,7 +19,6 @@ const EntityViewLayout = ({
   showBackButton = true,
   showMoreOptions = true,
   showAddButton = true,
-  headerContent,
 }) => {
   const navigate = useNavigate();
 
@@ -76,11 +75,6 @@ const EntityViewLayout = ({
             </IconButton>
           )}
         </Box>
-        {headerContent && (
-          <Box sx={{ mt: 2 }}>
-            {headerContent}
-          </Box>
-        )}
       </Box>
 
       {/* Content */}
