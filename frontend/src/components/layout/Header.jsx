@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   AppBar,
   Box,
@@ -36,6 +37,7 @@ const Header = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -51,9 +53,13 @@ const Header = () => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
-    // Add logout logic here
-    handleMenuClose();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      handleMenuClose();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const menuItems = [
@@ -255,20 +261,20 @@ const Header = () => {
               <ListItemIcon>
                 <AccountIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="My Profile" />
+              <ListItemText>My Profile</ListItemText>
             </MenuItem>
             <MenuItem onClick={() => navigate('/settings')}>
               <ListItemIcon>
                 <SettingsIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Settings" />
+              <ListItemText>Settings</ListItemText>
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout}>
               <ListItemIcon>
                 <LogoutIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Logout" />
+              <ListItemText>Logout</ListItemText>
             </MenuItem>
           </Menu>
         </Box>

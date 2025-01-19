@@ -1,197 +1,243 @@
-import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
-    Box,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    IconButton,
-    Chip,
-    TablePagination,
-    Tooltip,
-    Menu,
-    MenuItem,
-    TextField,
-    InputAdornment,
-    Alert
+  Box,
+  Paper,
+  Stack,
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  Chip,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
-    MoreVert as MoreVertIcon,
-    Search as SearchIcon,
-    Edit as EditIcon,
-    Delete as DeleteIcon,
-    CheckCircle as CheckCircleIcon,
-    Warning as WarningIcon,
-    Schedule as ScheduleIcon
+  MoreVert as MoreVertIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Category as CategoryIcon,
 } from '@mui/icons-material';
-import { deleteExpense, fetchExpenses, fetchBudget } from '../../store/slices/budgetSlice';
+import { fetchExpenses, deleteExpense } from '../../store/slices/budgetSlice';
 import ExpenseForm from './ExpenseForm';
 
 const StatusChip = ({ status }) => {
-    const getStatusConfig = (status) => {
-        switch (status) {
-            case 'paid':
-                return { label: 'Paid', color: 'success', icon: <CheckCircleIcon /> };
-            case 'partial':
-                return { label: 'Partial', color: 'warning', icon: <WarningIcon /> };
-            case 'pending':
-                return { label: 'Pending', color: 'default', icon: <ScheduleIcon /> };
-            default:
-                return { label: status, color: 'default', icon: null };
-        }
-    };
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return '#4CAF50';
+      case 'pending':
+        return '#FF9800';
+      case 'cancelled':
+        return '#F44336';
+      default:
+        return '#9E9E9E';
+    }
+  };
 
-    const config = getStatusConfig(status);
-
-    return (
-        <Chip
-            label={config.label}
-            color={config.color}
-            size="small"
-            icon={config.icon}
-        />
-    );
+  return (
+    <Chip
+      label={status}
+      size="small"
+      sx={{
+        bgcolor: `${getStatusColor(status)}15`,
+        color: getStatusColor(status),
+        borderRadius: '16px',
+        '& .MuiChip-label': {
+          px: 1,
+        },
+      }}
+    />
+  );
 };
 
-const ExpenseList = ({ weddingId, onEdit }) => {
-    const dispatch = useDispatch();
-    const { expenses, loading, error } = useSelector((state) => state.budget);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [selectedExpense, setSelectedExpense] = useState(null);
+const ExpenseList = ({
+  weddingId,
+  searchQuery,
+  activeFilters,
+  setActiveFilters,
+  isExpenseFormOpen,
+  onCloseExpenseForm,
+}) => {
+  const dispatch = useDispatch();
+  const { expenses, loading, error } = useSelector((state) => state.budget);
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [editingExpense, setEditingExpense] = useState(null);
 
-    const handleMenuOpen = (event, expense) => {
-        console.log('Opening menu for expense:', expense);
-        setSelectedExpense(expense);
-        setAnchorEl(event.currentTarget);
-    };
+  const handleMenuOpen = (event, expense) => {
+    setSelectedExpense(expense);
+    setAnchorEl(event.currentTarget);
+  };
 
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
+  const handleMenuClose = () => {
+    setSelectedExpense(null);
+    setAnchorEl(null);
+  };
 
-    const handleEdit = () => {
-        console.log('Editing expense:', selectedExpense);
-        onEdit(selectedExpense);
-        handleMenuClose();
-    };
+  const handleEdit = () => {
+    setEditingExpense(selectedExpense);
+    handleMenuClose();
+  };
 
-    const handleDelete = async (expenseId) => {
-        try {
-            await dispatch(deleteExpense({ weddingId, expenseId }));
-            await Promise.all([
-                dispatch(fetchBudget(weddingId)),
-                dispatch(fetchExpenses(weddingId))
-            ]);
-            handleMenuClose();
-        } catch (error) {
-            console.error('Failed to delete expense:', error);
-        }
-    };
+  const handleDelete = async () => {
+    try {
+      await dispatch(deleteExpense({ weddingId, expenseId: selectedExpense.id })).unwrap();
+      handleMenuClose();
+    } catch (error) {
+      console.error('Failed to delete expense:', error);
+    }
+  };
 
-    const filteredExpenses = expenses.filter(expense =>
-        expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const handleExpenseFormClose = () => {
+    setEditingExpense(null);
+    onCloseExpenseForm();
+  };
 
-    if (loading) return <Box>Loading...</Box>;
-    if (error) return <Alert severity="error">{error}</Alert>;
+  const filteredExpenses = expenses?.filter((expense) => {
+    if (!searchQuery && (!activeFilters || activeFilters.length === 0)) {
+      return true;
+    }
 
+    const matchesSearch = searchQuery
+      ? expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        expense.category.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+
+    const matchesFilters = activeFilters?.length > 0
+      ? activeFilters.includes(expense.category)
+      : true;
+
+    return matchesSearch && matchesFilters;
+  });
+
+  if (loading) {
     return (
-        <Box>
-            <TextField
-                fullWidth
-                variant="outlined"
-                placeholder="Search expenses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position="start">
-                            <SearchIcon />
-                        </InputAdornment>
-                    ),
-                }}
-                sx={{ mb: 2 }}
-            />
-
-            <TableContainer>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Description</TableCell>
-                            <TableCell>Category</TableCell>
-                            <TableCell align="right">Amount</TableCell>
-                            <TableCell align="right">Paid Amount</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Due Date</TableCell>
-                            <TableCell align="right">Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {filteredExpenses
-                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((expense) => (
-                                <TableRow key={expense.id}>
-                                    <TableCell>{expense.description}</TableCell>
-                                    <TableCell>{expense.category}</TableCell>
-                                    <TableCell align="right">${expense.amount.toLocaleString()}</TableCell>
-                                    <TableCell align="right">${(expense.paidAmount || 0).toLocaleString()}</TableCell>
-                                    <TableCell><StatusChip status={expense.status} /></TableCell>
-                                    <TableCell>
-                                        {expense.dueDate ? new Date(expense.dueDate).toLocaleDateString() : '-'}
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <IconButton
-                                            size="small"
-                                            onClick={(e) => handleMenuOpen(e, expense)}
-                                        >
-                                            <MoreVertIcon />
-                                        </IconButton>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-
-            <TablePagination
-                component="div"
-                count={filteredExpenses.length}
-                page={page}
-                onPageChange={(e, newPage) => setPage(newPage)}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={(e) => {
-                    setRowsPerPage(parseInt(e.target.value, 10));
-                    setPage(0);
-                }}
-            />
-
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-            >
-                <MenuItem onClick={handleEdit}>
-                    <EditIcon fontSize="small" sx={{ mr: 1 }} />
-                    Edit
-                </MenuItem>
-                <MenuItem 
-                    onClick={() => handleDelete(selectedExpense?.id)}
-                    sx={{ color: 'error.main' }}
-                >
-                    <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-                    Delete
-                </MenuItem>
-            </Menu>
-        </Box>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress sx={{ color: '#D1BFA5' }} />
+      </Box>
     );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
+
+  if (!filteredExpenses?.length) {
+    return (
+      <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 2 }}>
+        No expenses found
+      </Typography>
+    );
+  }
+
+  return (
+    <>
+      <Stack spacing={2}>
+        {filteredExpenses.map((expense) => (
+          <Paper
+            key={expense.id}
+            elevation={0}
+            sx={{
+              p: 2,
+              bgcolor: '#FFFFFF',
+              border: '1px solid',
+              borderColor: 'rgba(0, 0, 0, 0.12)',
+              borderRadius: '16px',
+              '&:hover': {
+                borderColor: 'rgba(0, 0, 0, 0.24)',
+              },
+            }}
+          >
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+              <Box sx={{ flex: 1 }}>
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: '#D1BFA515',
+                      borderRadius: '8px',
+                      p: 1,
+                    }}
+                  >
+                    <CategoryIcon sx={{ fontSize: 20, color: '#D1BFA5' }} />
+                  </Box>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontSize: '1rem',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {expense.category}
+                  </Typography>
+                </Stack>
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  {expense.description}
+                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" color="text.secondary">
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD',
+                    }).format(expense.amount)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">•</Typography>
+                  <StatusChip status={expense.status} />
+                </Stack>
+              </Box>
+              <IconButton
+                size="small"
+                onClick={(e) => handleMenuOpen(e, expense)}
+                sx={{
+                  color: 'text.secondary',
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' },
+                }}
+              >
+                <MoreVertIcon />
+              </IconButton>
+            </Stack>
+          </Paper>
+        ))}
+      </Stack>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleEdit}>
+          <EditIcon sx={{ mr: 1, fontSize: 20 }} />
+          Edit
+        </MenuItem>
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+          <DeleteIcon sx={{ mr: 1, fontSize: 20 }} />
+          Delete
+        </MenuItem>
+      </Menu>
+
+      <ExpenseForm
+        open={isExpenseFormOpen || Boolean(editingExpense)}
+        onClose={handleExpenseFormClose}
+        expense={editingExpense}
+        weddingId={weddingId}
+      />
+    </>
+  );
 };
 
 export default ExpenseList; 

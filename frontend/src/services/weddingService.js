@@ -13,7 +13,14 @@ const weddingService = {
     getWedding: async (id) => {
         try {
             const response = await api.get(`/weddings/${id}`);
-            return response.data;
+            if (response.data.managed) {
+                const wedding = response.data.managed.find(w => w.id === parseInt(id));
+                if (!wedding) {
+                    throw new Error('Wedding not found');
+                }
+                return wedding;
+            }
+            return response.data.wedding;
         } catch (error) {
             throw new Error(error.response?.data?.message || 'Failed to fetch wedding details');
         }

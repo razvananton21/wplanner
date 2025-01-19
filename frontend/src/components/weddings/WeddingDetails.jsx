@@ -113,6 +113,22 @@ const WeddingDetails = () => {
       navigate(`/weddings/${id}/timeline`);
       return;
     }
+    if (path === 'tasks') {
+      navigate(`/weddings/${id}/tasks`);
+      return;
+    }
+    if (path === 'vendors') {
+      navigate(`/weddings/${id}/vendors`);
+      return;
+    }
+    if (path === 'tables') {
+      navigate(`/weddings/${id}/tables`);
+      return;
+    }
+    if (path === 'rsvp-form') {
+      navigate(`/weddings/${id}/rsvp-form`);
+      return;
+    }
     if (id === 'new') {
       console.log('Creating new wedding...');
       return;
@@ -717,13 +733,8 @@ const WeddingDetails = () => {
         );
       case 'guests':
         return <GuestList weddingId={id} />;
-      case 'tasks':
-      case 'vendors':
-      case 'tables':
-      case 'rsvp-form':
       case 'invitation':
       case 'budget':
-      case 'timeline':
         return (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="h6" color="text.secondary">

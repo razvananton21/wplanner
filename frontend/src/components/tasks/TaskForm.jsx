@@ -1,206 +1,272 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
-    Button,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Stack,
-    Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  MenuItem,
+  alpha,
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import {
+  Flag as FlagIcon,
+  Category as CategoryIcon,
+} from '@mui/icons-material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import taskService from '../../services/taskService';
 
 const CATEGORIES = [
-    'pre-wedding',
-    'ceremony',
-    'reception',
-    'attire',
-    'beauty',
-    'vendors',
-    'guests',
-    'documentation',
-    'honeymoon',
-    'post-wedding'
+  'Pre-Wedding',
+  'Ceremony',
+  'Reception',
+  'Attire',
+  'Beauty',
+  'Vendors',
+  'Guests',
+  'Documentation',
+  'Honeymoon',
+  'Post-Wedding',
 ];
 
 const PRIORITIES = [
-    { value: 1, label: 'High' },
-    { value: 2, label: 'Medium' },
-    { value: 3, label: 'Low' }
+  { value: 1, label: 'High', color: '#E57373' },
+  { value: 2, label: 'Medium', color: '#FFB74D' },
+  { value: 3, label: 'Low', color: '#81C784' },
 ];
 
-const TaskForm = ({ open, onClose, weddingId, task = null }) => {
-    const [formData, setFormData] = useState({
+const TaskForm = ({ open, onClose, weddingId, onTaskAdded, task }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: CATEGORIES[0],
+    priority: 2,
+    dueDate: null,
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (task) {
+      setFormData({
+        title: task.title,
+        description: task.description || '',
+        category: task.category,
+        priority: task.priority,
+        dueDate: task.dueDate ? new Date(task.dueDate) : null,
+      });
+    } else {
+      setFormData({
         title: '',
         description: '',
-        category: 'pre-wedding',
+        category: CATEGORIES[0],
         priority: 2,
         dueDate: null,
-        notes: '',
+      });
+    }
+  }, [task]);
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      if (task) {
+        await taskService.updateTask(weddingId, task.id, formData);
+      } else {
+        await taskService.createTask(weddingId, formData);
+      }
+      onTaskAdded();
+      handleClose();
+    } catch (err) {
+      console.error('Failed to save task:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      title: '',
+      description: '',
+      category: CATEGORIES[0],
+      priority: 2,
+      dueDate: null,
     });
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(false);
+    onClose();
+  };
 
-    useEffect(() => {
-        if (task) {
-            setFormData({
-                title: task.title,
-                description: task.description || '',
-                category: task.category,
-                priority: task.priority,
-                dueDate: task.dueDate ? new Date(task.dueDate) : null,
-                notes: task.notes || '',
-            });
-        } else {
-            setFormData({
-                title: '',
-                description: '',
-                category: 'pre-wedding',
-                priority: 2,
-                dueDate: null,
-                notes: '',
-            });
+  return (
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: '16px',
+          bgcolor: '#FFFFFF',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
         }
-    }, [task]);
-
-    const handleInputChange = (field) => (event) => {
-        setFormData({
-            ...formData,
-            [field]: event.target.value,
-        });
-    };
-
-    const handleDateChange = (date) => {
-        setFormData({
-            ...formData,
-            dueDate: date,
-        });
-    };
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setLoading(true);
-        setError(null);
-
-        try {
-            if (task) {
-                await taskService.updateTask(weddingId, task.id, formData);
-            } else {
-                await taskService.createTask(weddingId, formData);
-            }
-            onClose(true);
-        } catch (err) {
-            setError(err.message || 'Failed to save task');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <Dialog open={open} onClose={() => onClose(false)} maxWidth="sm" fullWidth>
-            <form onSubmit={handleSubmit}>
-                <DialogTitle>
-                    {task ? 'Edit Task' : 'New Task'}
-                </DialogTitle>
-
-                <DialogContent>
-                    <Stack spacing={3} sx={{ mt: 1 }}>
-                        {error && (
-                            <Alert severity="error">
-                                {error}
-                            </Alert>
-                        )}
-
-                        <TextField
-                            label="Title"
-                            value={formData.title}
-                            onChange={handleInputChange('title')}
-                            required
-                            fullWidth
-                        />
-
-                        <TextField
-                            label="Description"
-                            value={formData.description}
-                            onChange={handleInputChange('description')}
-                            multiline
-                            rows={3}
-                            fullWidth
-                        />
-
-                        <FormControl fullWidth>
-                            <InputLabel>Category</InputLabel>
-                            <Select
-                                value={formData.category}
-                                onChange={handleInputChange('category')}
-                                label="Category"
-                            >
-                                {CATEGORIES.map((category) => (
-                                    <MenuItem key={category} value={category}>
-                                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth>
-                            <InputLabel>Priority</InputLabel>
-                            <Select
-                                value={formData.priority}
-                                onChange={handleInputChange('priority')}
-                                label="Priority"
-                            >
-                                {PRIORITIES.map((priority) => (
-                                    <MenuItem key={priority.value} value={priority.value}>
-                                        {priority.label}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <LocalizationProvider dateAdapter={AdapterDateFns}>
-                            <DateTimePicker
-                                label="Due Date"
-                                value={formData.dueDate}
-                                onChange={handleDateChange}
-                                renderInput={(params) => <TextField {...params} fullWidth />}
-                            />
-                        </LocalizationProvider>
-
-                        <TextField
-                            label="Notes"
-                            value={formData.notes}
-                            onChange={handleInputChange('notes')}
-                            multiline
-                            rows={2}
-                            fullWidth
-                        />
-                    </Stack>
-                </DialogContent>
-
-                <DialogActions>
-                    <Button onClick={() => onClose(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={loading}
-                    >
-                        {loading ? 'Saving...' : 'Save'}
-                    </Button>
-                </DialogActions>
-            </form>
-        </Dialog>
-    );
+      }}
+    >
+      <DialogTitle sx={{
+        color: '#5C5C5C',
+        fontSize: '1.25rem',
+        fontWeight: 600,
+        fontFamily: 'Cormorant Garamond, serif',
+        borderBottom: '1px solid #E8E3DD',
+        pb: 2,
+      }}>
+        {task ? 'Edit Task' : 'Add Task'}
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <TextField
+            label="Title"
+            fullWidth
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#FAFAFA',
+                '&:hover fieldset': {
+                  borderColor: '#D1BFA5',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#D1BFA5',
+                },
+              },
+            }}
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            multiline
+            rows={3}
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#FAFAFA',
+                '&:hover fieldset': {
+                  borderColor: '#D1BFA5',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#D1BFA5',
+                },
+              },
+            }}
+          />
+          <TextField
+            select
+            label="Category"
+            fullWidth
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#FAFAFA',
+                '&:hover fieldset': {
+                  borderColor: '#D1BFA5',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#D1BFA5',
+                },
+              },
+            }}
+          >
+            {CATEGORIES.map((category) => (
+              <MenuItem key={category} value={category}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CategoryIcon sx={{ color: '#D1BFA5' }} />
+                  {category}
+                </Box>
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Priority"
+            fullWidth
+            value={formData.priority}
+            onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#FAFAFA',
+                '&:hover fieldset': {
+                  borderColor: '#D1BFA5',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#D1BFA5',
+                },
+              },
+            }}
+          >
+            {PRIORITIES.map((priority) => (
+              <MenuItem key={priority.value} value={priority.value}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <FlagIcon sx={{ color: priority.color }} />
+                  {priority.label}
+                </Box>
+              </MenuItem>
+            ))}
+          </TextField>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="Due Date"
+              value={formData.dueDate}
+              onChange={(date) => setFormData({ ...formData, dueDate: date })}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#FAFAFA',
+                      '&:hover fieldset': {
+                        borderColor: '#D1BFA5',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#D1BFA5',
+                      },
+                    },
+                  }}
+                />
+              )}
+            />
+          </LocalizationProvider>
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: 3, borderTop: '1px solid #E8E3DD' }}>
+        <Button 
+          onClick={handleClose}
+          sx={{
+            color: '#8F8F8F',
+            '&:hover': {
+              bgcolor: alpha('#8F8F8F', 0.08),
+            },
+          }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={handleSubmit} 
+          variant="contained"
+          disabled={loading}
+          sx={{
+            bgcolor: '#D1BFA5',
+            color: '#FFFFFF',
+            '&:hover': {
+              bgcolor: '#C1AF95',
+            },
+          }}
+        >
+          {loading ? (task ? 'Saving...' : 'Adding...') : (task ? 'Save Changes' : 'Add Task')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 };
 
 export default TaskForm; 

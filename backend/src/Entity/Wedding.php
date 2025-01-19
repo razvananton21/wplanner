@@ -14,6 +14,7 @@ class Wedding
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['budget:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]

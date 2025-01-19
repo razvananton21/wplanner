@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   TextField,
@@ -16,6 +16,7 @@ import EntityViewLayout from '../common/EntityViewLayout';
 
 const GuestsPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isBulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState(0);
@@ -23,7 +24,7 @@ const GuestsPage = () => {
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
 
   const handleAddGuest = () => {
-    setAddModalOpen(true);
+    navigate(`/weddings/${id}/guests/add`);
   };
 
   return (
@@ -32,7 +33,6 @@ const GuestsPage = () => {
       backUrl={`/weddings/${id}`}
       onAdd={handleAddGuest}
     >
-
       <GuestList 
         weddingId={id} 
         isAddModalOpen={isAddModalOpen}

@@ -1,362 +1,591 @@
-# WPlanner Project Rules for AI Assistance
+# Instructions
 
-# AI Assistant Profile
-ai_profile:
-  role: "Expert AI Programming Assistant"
-  primary_focus: "Clean and readable code production"
-  expertise:
-    languages:
-      php: "Latest stable version (8.2+)"
-      javascript: "Latest stable version (ES2023+)"
-    frameworks:
-      frontend:
-        - "React (Latest stable)"
-        - "Modern React patterns (Hooks, Context, Suspense)"
-        - "State management best practices"
-      backend:
-        - "Symfony 6+ (Latest stable)"
-        - "Modern Symfony patterns and practices"
-        - "Doctrine ORM optimization"
-    infrastructure:
-      - "Docker and Docker Compose"
-      - "Container orchestration"
-      - "Development workflows"
-  
-  working_principles:
-    - "Focus on code clarity and maintainability"
-    - "Follow latest language features and best practices"
-    - "Provide accurate and factual responses"
-    - "Apply thorough reasoning to all decisions"
-    - "Consider full-stack implications of changes"
-    - "Maintain security best practices"
-    - "Optimize for performance and scalability"
+During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 
 
-# Documentation Reading Order
-documentation_order:
-  1: docs/CONTEXT.md          # Project overview and documentation structure
-  2: docs/codebase_part1.md   # Frontend architecture
-  3: docs/codebase_part2.md   # Backend architecture
-  4: docs/codebase_part3.md   # Integration patterns
-  5: docs/ENDPOINTS.md        # API documentation
-  6: docs/roadmap.md          # Project status and plans
-  7: docs/deployment.md       # Deployment and operations
+You should also use the `.cursorrules` file as a scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the scratchpad, clear old different task if necessary, first explain the task, and plan the steps you need to take to complete the task. You can use todo markers to indicate the progress, e.g.
+[X] Task 1
+[ ] Task 2
+Also update the progress of the task in the Scratchpad when you finish a subtask.
+Especially when you finished a milestone, it will help to improve your depth of task accomplishment to use the scratchpad to reflect and plan.
+The goal is to help you maintain a big picture as well as the progress of the task. Always refer to the Scratchpad when you plan the next step.
 
-# Project Standards
-standards:
-  status_markers:
-    completed: "[✓]"
-    in_progress: "[WIP]"
-    planned: "[TODO]"
-  
-  code_organization:
-    frontend:
-      framework: "React + Vite"
-      state_management: "React Context + Hooks"
-      styling: "Tailwind CSS"
-    backend:
-      framework: "Symfony 6"
-      database: "MySQL 8"
-      cache: "Redis"
+Follow the coding style and conventions in the project. Please take a step by step approach to implement the changes.
 
-# Key Features Status
-features:
-  authentication:
-    status: "[✓]"
-    token_expiration: "7 days"
-    methods: ["JWT", "Google OAuth"]
-  
-  wedding_management:
-    status: "[✓]"
-    core_features: ["CRUD", "Timeline", "Details"]
-  
-  guest_management:
-    status: "[✓]"
-    includes: ["CRUD", "RSVP", "Categories", "Plus-ones"]
-  
-  budget_tracking:
-    status: "[✓]"
-    limitations: "Basic implementation - overview and expenses only"
-  
-  photo_gallery:
-    status: "[TODO]"
-    planned_features: ["Upload", "Organization", "Sharing"]
+## 1. Code Consistency & Standards
+- Always inspect existing patterns before suggesting changes or additions
+  - Check class/interface inheritance patterns
+  - Review design patterns in use (Repository, Factory, Strategy, etc.)
+  - Observe dependency injection methods
+  - Note service method signatures and return types
+- Follow established naming conventions in the specific module/component
+  - Use consistent casing (PascalCase for classes, camelCase for methods)
+  - Follow prefix/suffix patterns (e.g., Interface suffixes)
+  - Maintain consistent variable naming patterns
+  - Use semantic and descriptive names
+- Maintain consistent error handling patterns per module
+  - Use module-specific exception classes
+  - Follow try-catch patterns
+  - Maintain error propagation chains
+  - Use consistent error logging levels
+- Use existing logging patterns and levels
+  - Follow established log level usage (DEBUG, INFO, WARNING, ERROR)
+  - Include contextual data in logs
+  - Use structured logging format
+  - Maintain log message consistency
+- Follow established service patterns and dependency injection methods
+  - Use constructor injection for required dependencies
+  - Follow service registration patterns
+  - Maintain service interface contracts
+  - Use appropriate service scope (singleton, transient, scoped)
+- Respect existing architectural boundaries
+  - Follow layered architecture patterns
+  - Maintain separation of concerns
+  - Use appropriate abstraction levels
+  - Follow SOLID principles
+- Maintain consistent return types and method signatures
+  - Use type declarations consistently
+  - Follow nullable type patterns
+  - Use consistent array/collection returns
+  - Maintain parameter ordering conventions
+- Follow existing validation patterns
+  - Use consistent validation approaches
+  - Apply validation at appropriate layers
+  - Follow error message formats
+  - Use validation attributes consistently
+- Use established testing patterns and methodologies
+  - Follow unit test naming conventions
+  - Maintain test structure consistency
+  - Use consistent mocking patterns
+  - Follow assertion style guidelines
 
-# Integration Points
-integrations:
-  - google_oauth
-  - email_service
-  - file_storage
+## 2. Context Gathering
+Before making suggestions or changes:
+- Analyze related files and dependencies
+  - Check class dependencies and inheritance
+  - Review service dependencies
+  - Check database relationships
+  - Analyze API dependencies
+- Understand the module's purpose and boundaries
+  - Review module interfaces
+  - Check service boundaries
+  - Understand data flow
+  - Review event handling
+- Check for similar implementations elsewhere in the codebase
+  - Look for pattern implementations
+  - Review similar feature code
+  - Check utility functions
+  - Review shared components
+- Verify technical assumptions against existing code
+  - Check type usage
+  - Review error handling
+  - Verify transaction boundaries
+  - Check concurrency handling
+- Request specific examples if behavior is unclear
+  - Ask for API request/response examples
+  - Review data structure samples
+  - Check edge case scenarios
+  - Verify business rules
+- Ask about impact on related systems
+  - Check service dependencies
+  - Review event subscribers
+  - Check API consumers
+  - Verify database impact
+- Understand specific use cases that need support
+  - Review business requirements
+  - Check validation rules
+  - Understand data constraints
+  - Review performance requirements
+- Request access to relevant documentation
+  - Check API documentation
+  - Review technical specs
+  - Check architecture diagrams
+  - Review database schemas
+- Ask for clarification on business rules when needed
+  - Verify validation rules
+  - Check calculation logic
+  - Review workflow rules
+  - Understand state transitions
 
-# Known Limitations
-limitations:
-  - Budget reporting features not implemented
-  - No mobile-specific optimizations
-  - Photo gallery not started
-  - Limited data export capabilities
+## 3. Incremental Implementation
+- Break changes into small, reviewable steps
+  - Implement interface changes first
+  - Add new methods before modifying existing ones
+  - Update tests incrementally
+  - Roll out validation changes gradually
+- Each change should be independently functional
+  - Ensure complete feature slices
+  - Maintain working tests
+  - Keep backward compatibility
+  - Include necessary migrations
+- Maintain working state between modifications
+  - Use feature flags
+  - Implement fallback mechanisms
+  - Keep old code paths until ready
+  - Use deprecation notices
+- Document dependencies between changes
+  - Map service dependencies
+  - Document class relationships
+  - Note database dependencies
+  - Track API changes
+- Consider migration paths for data and functionality
+  - Plan data migrations
+  - Handle schema updates
+  - Consider state transitions
+  - Plan API versioning
+- Plan rollback strategies for each change
+  - Create database rollbacks
+  - Version API endpoints
+  - Maintain old interfaces
+  - Document reversion steps
+- Document each step's validation requirements
+  - List validation rules
+  - Document edge cases
+  - Specify test scenarios
+  - Note performance requirements
 
-# Technical Decisions Pending
-pending_decisions:
-  - Response time requirements
-  - Caching strategies
-  - Rate limiting rules
-  - Data retention policies
-  - Error handling standards
+## 4. Non-Breaking Changes
+- Add new methods instead of modifying existing ones
+  - Use method overloading
+  - Implement interface extensions
+  - Create new service methods
+  - Add optional parameters
+- Use feature flags for major changes
+  - Implement toggle mechanisms
+  - Use configuration switches
+  - Add environment variables
+  - Implement A/B testing
+- Maintain backward compatibility
+  - Keep old method signatures
+  - Support legacy data formats
+  - Maintain API versions
+  - Handle deprecated features
+- Support existing data structures
+  - Add nullable fields
+  - Use default values
+  - Maintain indexes
+  - Handle schema evolution
+- Handle null values for new fields
+  - Implement null checks
+  - Use null coalescing
+  - Add default values
+  - Handle optional parameters
+- Keep existing method signatures
+  - Use optional parameters
+  - Implement method overloading
+  - Use builder patterns
+  - Maintain interface contracts
+- Provide migration paths
+  - Create data migrations
+  - Version APIs
+  - Add conversion utilities
+  - Document upgrade steps
+- Consider existing integrations
+  - Check API consumers
+  - Review event subscribers
+  - Check service dependencies
+  - Verify plugin compatibility
 
-# Development Guidelines
-guidelines:
-  commits:
-    format: "type(scope): description"
-    types: ["feat", "fix", "docs", "style", "refactor", "test", "chore"]
-  
-  branches:
-    main: "production ready code"
-    develop: "integration branch"
-    feature: "feature/*"
-    bugfix: "bugfix/*"
+## 5. File Structure & Organization
+- Verify correct location for new files
+  - Follow namespace hierarchy
+  - Group by feature/module
+  - Maintain consistent directory structure
+  - Use appropriate subdirectories
+- Follow existing namespace patterns
+  - Match namespace to directory structure
+  - Use PSR-4 autoloading
+  - Maintain vendor namespaces
+  - Follow class naming conventions
+- Maintain consistent directory structure
+  - Separate concerns (controllers, services, etc.)
+  - Group related features
+  - Organize test files properly
+  - Keep configuration organized
+- Check similar feature implementations
+  - Review related modules
+  - Check shared components
+  - Review utility classes
+  - Check service implementations
+- Review related components
+  - Check service dependencies
+  - Review event listeners
+  - Check interface implementations
+  - Review trait usage
+- Understand module boundaries
+  - Check service interfaces
+  - Review dependency graph
+  - Understand data flow
+  - Check event dispatching
+- Follow established coding standards
+  - Use consistent formatting
+  - Follow naming conventions
+  - Maintain file structure
+  - Use appropriate comments
+- Maintain proper autoloading
+  - Follow PSR-4 standards
+  - Update composer.json
+  - Check class mappings
+  - Verify namespace resolution
+- Consider test file locations
+  - Mirror source structure
+  - Group related tests
+  - Organize test data
+  - Maintain test utilities
+- Document file purpose and relationships
+  - Add file headers
+  - Document dependencies
+  - Note related files
+  - Explain file role
 
-# Deployment Environments
-environments:
-  production:
-    platform: "Hetzner"
-    deployment: "Docker"
-    domain: "nip.io based"
-    monitoring: "Prometheus + Grafana"
+## 6. Error Handling & Logging
+- Use appropriate exception types per module
+  - Create domain-specific exceptions
+  - Extend base exceptions properly
+  - Use semantic exception names
+  - Follow exception hierarchy
+- Log errors with proper context
+  - Include stack traces
+  - Add request context
+  - Log correlation IDs
+  - Include user context
+- Provide meaningful error messages
+  - Use consistent message format
+  - Include actionable information
+  - Add error codes
+  - Provide debugging context
+- Handle edge cases consistently
+  - Check null values
+  - Validate input ranges
+  - Handle empty collections
+  - Check boundary conditions
+- Maintain existing error patterns
+  - Follow error propagation
+  - Use consistent catch blocks
+  - Handle nested exceptions
+  - Follow retry patterns
+- Consider retry mechanisms
+  - Implement exponential backoff
+  - Set retry limits
+  - Handle transient failures
+  - Log retry attempts
+- Document error scenarios
+  - List possible exceptions
+  - Document recovery paths
+  - Note side effects
+  - Explain error contexts
+- Use established logging levels
+  - Follow severity guidelines
+  - Use appropriate log levels
+  - Maintain logging consistency
+  - Structure log messages
+- Include proper stack traces
+  - Filter sensitive data
+  - Format stack traces
+  - Include relevant frames
+  - Add context information
+- Add debugging context when needed
+  - Include variable state
+  - Log method parameters
+  - Add timing information
+  - Note system state
 
-# Required Reading Before Changes
-required_reading:
-  frontend_changes:
-    - docs/codebase_part1.md
-    - docs/codebase_part3.md
-  
-  backend_changes:
-    - docs/codebase_part2.md
-    - docs/ENDPOINTS.md
-  
-  deployment_changes:
-    - docs/deployment.md
+## 7. Documentation & Comments
+- Document public API changes
+  - Update API specifications
+  - Document request/response formats
+  - Note breaking changes
+  - Include migration guides
+- Update relevant README files
+  - Document setup steps
+  - List dependencies
+  - Include usage examples
+  - Note configuration options
+- Add PHPDoc blocks for new methods
+  - Document parameters
+  - Specify return types
+  - List thrown exceptions
+  - Add usage examples
+- Document complex logic
+  - Explain algorithms
+  - Note edge cases
+  - Document assumptions
+  - Include performance notes
+- Update configuration examples
+  - Show common settings
+  - Document environment variables
+  - Include sample configs
+  - Note default values
+- Maintain changelog entries
+  - List significant changes
+  - Note breaking changes
+  - Include upgrade steps
+  - Document bug fixes
+- Document breaking changes
+  - List affected components
+  - Provide migration steps
+  - Note deprecated features
+  - Include timeline
+- Add migration guides when needed
+  - List required steps
+  - Include code examples
+  - Note potential issues
+  - Document rollback steps
+- Update API documentation
+  - Document endpoints
+  - Show request/response examples
+  - List error responses
+  - Include authentication details
+- Include usage examples
+  - Show common use cases
+  - Provide code snippets
+  - Document best practices
+  - Include edge cases
 
-# Error Response Format
-error_format:
-  structure:
-    status: "HTTP status code"
-    message: "User-friendly message"
-    errors: "Detailed error information"
-    code: "Internal error code"
+## 8. Testing Requirements
+- Add unit tests for new functionality
+- Update existing tests for changes
+- Add integration tests for new features
+- Test edge cases and error conditions
+- Verify backward compatibility
+- Test performance impact
+- Add regression tests
+- Document test scenarios
+- Include test data examples
+- Test configuration changes
 
-# Success Metrics
-metrics:
-  performance:
-    - API response times
-    - Page load times
-    - Resource utilization
-  
-  user_engagement:
-    - Active users
-    - Feature usage
-    - Session duration
+## 9. Performance Considerations
+- Consider memory usage
+- Check query efficiency
+- Evaluate cache impact
+- Consider scalability
+- Check batch processing efficiency
+- Evaluate concurrent access
+- Consider distributed systems impact
+- Consider API call frequency
+- Consider database load
 
-# Code Change Safety
-code_safety:
-  pre_change_checks:
-    - Read and understand the full context of the file being modified
-    - Identify dependencies and potential side effects
-    - Review existing tests related to the change
-    - Check for similar patterns in the codebase
-  
-  implementation_rules:
-    - Preserve existing functionality unless explicitly requested to change
-    - Maintain consistent code style and patterns
-    - Keep changes minimal and focused
-    - Respect existing error handling patterns
-    - Follow established naming conventions
-  
-  post_change_validation:
-    - Review the complete diff before confirming changes
-    - Verify all imports and dependencies are properly handled
-    - Check for potential edge cases
-    - Ensure error handling is properly maintained
-    - Confirm no unintended side effects
-  
-  critical_areas:
-    authentication:
-      - Token handling
-      - Session management
-      - Permission checks
-    data_integrity:
-      - Database operations
-      - File operations
-      - State management
-    user_flows:
-      - Form submissions
-      - Navigation paths
-      - API integrations
+## 10. Security Practices
+- Follow existing security patterns
+- Validate input consistently
+- Use proper encryption methods
+- Handle sensitive data appropriately
+- Follow authentication patterns
+- Use authorization checks
+- Sanitize output
+- Handle API keys securely
+- Follow CSRF protection patterns
+- Implement rate limiting
 
-# Autonomous Workflow
-autonomous_workflow:
-  initialization:
-    - Read .cursorrules file completely
-    - Follow documentation_order section to review all documentation
-    - Build complete understanding of project architecture and patterns
-    - Identify similar existing implementations for reference
+## 11. Dependency Management
+- Check compatibility with existing dependencies
+- Consider version constraints
+- Evaluate security implications
+- Document new dependencies
+- Consider alternative implementations
+- Check license compatibility
+- Evaluate maintenance status
+- Consider dependency size
+- Check for conflicts
+- Document version requirements
 
-  command_execution:
-    automatic_flags:
-      - "--no-interaction"    # Run commands without requiring user input
-      - "--quiet"            # Reduce output verbosity when appropriate
-      - "--force"            # Force execution when safe to do so
-    
-    safe_commands:
-      doctrine:
-        - "doctrine:migrations:migrate"
-        - "doctrine:migrations:diff"
-        - "doctrine:schema:validate"
-        - "doctrine:cache:clear-metadata"
-      symfony:
-        - "cache:clear"
-        - "cache:warmup"
-      composer:
-        - "composer install"
-        - "composer dump-autoload"
-      npm:
-        - "npm install"
-        - "npm run build"
+## 12. Code Review Guidelines
+- Verify consistency with existing code
+- Check for potential side effects
+- Review security implications
+- Verify error handling
+- Check performance impact
+- Review documentation
+- Verify test coverage
+- Check backward compatibility
+- Review logging adequacy
+- Verify configuration changes
 
-    execution_rules:
-      - Always use --no-interaction when available
-      - Verify command is in safe_commands list
-      - Check environment before execution
-      - Handle potential failures gracefully
-      - Log command execution results
+## 13. Context Questions
+Always ask for clarification when:
+- Business requirements are unclear
+- Technical constraints are ambiguous
+- Integration points are undefined
+- Performance requirements are not specified
+- Security requirements are unclear
+- Compliance needs are not stated
+- Migration paths are undefined
+- Testing requirements are unclear
+- Documentation needs are not specified
+- Monitoring requirements are not defined
 
-  conversation_start: |
-    To initialize a new conversation, you can use either:
-    1. Short version: "Gain context please."
-    2. Long version: "Please initialize project understanding based on .cursorrules and follow the autonomous workflow for our conversation about WPlanner."
-    
-    Both commands are equivalent and will trigger:
-    1. Complete documentation review
-    2. Pattern recognition
-    3. Safety measures activation
-    4. Verification checklist preparation
+## 14. Implementation Strategy
+Before making changes:
+- Analyze impact on existing functionality
+- Plan incremental changes
+- Consider rollback strategies
+- Document dependencies
+- Plan testing approach
+- Consider performance impact
+- Evaluate security implications
+- Plan documentation updates
+- Consider monitoring needs
+- Plan deployment strategy
 
-  pattern_recognition:
-    entity_patterns:
-      - Database schema structure
-      - Entity class organization
-      - Repository methods
-      - Service layer implementation
-      - Controller endpoints
-      - Form types and validation
-      - Frontend component structure
-      - State management approach
-    
-    implementation_patterns:
-      - CRUD operations
-      - Validation rules
-      - Error handling
-      - Event dispatching
-      - Frontend-backend communication
-      - Testing approach
+## 15. Maintenance Considerations
+- Consider long-term maintainability
+- Document technical debt
+- Plan for future extensions
+- Consider upgrade paths
+- Document known limitations
+- Plan for deprecations
+- Consider backward compatibility
+- Document breaking changes
+- Plan migration strategies
+- Consider support requirements 
 
-  change_implementation:
-    steps:
-      1: Identify similar existing features for reference
-      2: List all required components based on pattern
-      3: Plan changes across all layers
-      4: Implement changes following established patterns
-      5: Validate against code_safety rules
-      6: Review entire implementation for consistency
+## 16. Technology Stack & Versions
+- PHP 8.1+
+  - Strict types enabled
+  - Attributes support
+  - Constructor property promotion
+  - Named arguments
+  - Match expressions
 
-  verification_checklist:
-    backend:
-      - Entity mapping correct
-      - Repository methods follow patterns
-      - Service layer complete
-      - Controller endpoints consistent
-      - Security rules applied
-      - Tests implemented
-    
-    frontend:
-      - Components follow structure
-      - State management consistent
-      - API integration complete
-      - Error handling implemented
-      - UI/UX patterns followed
-      - Responsive design maintained
+- Symfony Framework 6.x
+  - Doctrine ORM
+  - Symfony DI (Dependency Injection)
+  - Symfony Console
+  - Symfony Messenger
 
-  documentation_maintenance:
-    update_triggers:
-      - feature_completion:
-          when: "After completing implementation of any feature"
-          prompt: "Should we update the documentation to reflect these new features?"
-      
-      - architectural_changes:
-          when: "After making changes to project structure or patterns"
-          prompt: "The project architecture has changed. Should we update the documentation to reflect these changes?"
-      
-      - dependency_updates:
-          when: "After adding or updating project dependencies"
-          prompt: "Project dependencies have changed. Should we update the technical documentation?"
-      
-      - workflow_changes:
-          when: "After modifying development or deployment workflows"
-          prompt: "Development workflows have been modified. Should we update the process documentation?"
-      
-      - status_changes:
-          when: "After changing feature status ([TODO] → [WIP] → [✓])"
-          prompt: "Feature status has changed. Should we update the roadmap and status documentation?"
-      
-      - mobile_specific:
-          when: "After any mobile-related changes or decisions"
-          prompt: "Mobile implementation details have changed. Should we update the mobile strategy documentation?"
-      
-      - api_changes:
-          when: "After modifying or adding API endpoints"
-          prompt: "API changes detected. Should we update the endpoint documentation?"
-      
-      - performance_updates:
-          when: "After implementing performance improvements"
-          prompt: "Performance optimizations have been made. Should we update the technical considerations?"
+- Microsoft Graph API
+  - Microsoft Graph SDK for PHP
+  - OAuth 2.0 authentication
+  - Microsoft 365 Calendar integration
 
-    files_to_update:
-      - docs/CONTEXT.md:
-        - Implementation Status Overview
-        - Feature status updates
-      - docs/roadmap.md:
-        - Current Implementation Status
-        - Development Phases
-        - Success Metrics if applicable
-      - docs/codebase_part*.md:
-        - Architecture changes
-        - New patterns introduced
-        - Component documentation
-      - docs/ENDPOINTS.md:
-        - New endpoints
-        - Modified endpoints
-        - New parameters or responses
-      - docs/MOBILE_STRATEGY.md:
-        - Mobile-specific features
-        - Platform considerations
-        - Testing requirements
+- Laravel Collections
+  - Used for data manipulation
+  - Array handling
+  - Collection pipelines
 
-    update_rules:
-      - Update all status markers ([✓], [WIP], [TODO])
-      - Add new features to relevant sections
-      - Document any new patterns or approaches
-      - Update technical considerations
-      - Reflect changes in implementation status
-      - Add new limitations or considerations
+- Database
+  - MySQL 5.7
+  - Doctrine Migrations
+  - Prepared statements
+  - Encryption support
 
-    verification:
-      - All affected files are updated
-      - Status markers are consistent
-      - New features are properly documented
-      - Cross-references are maintained
-      - Documentation remains clear and concise
+- Development Tools
+  - PHPUnit for testing
+  - PHP CS Fixer
+  - PHPStan for static analysis
+  - Xdebug for debugging
 
-  safety_measures:
-    - Never modify existing functionality without explicit request
-    - Always follow established patterns exactly
-    - Implement complete feature vertical slice
-    - Maintain consistent naming and structure
-    - Include all necessary tests and validation
+- Infrastructure
+  - Queue system for async processing
+  - Encryption provider for sensitive data
+  - Windows timezone handling
+  - Logging system with context
+
+- Frontend Integration
+  - React
+  - Build System
+    - Vite
+  - API Integration
+    - REST API endpoints
+    - JSON response format
+    - CORS handling
+    - API versioning
+  - Code Quality
+    - JSHint configuration
+    - Strict mode enabled
+    - Code complexity limits
+    - Style guidelines enforced
+
+## 17. Coding Style & Conventions
+- PSR-12 coding standards
+- Type declarations required
+- Return type declarations required
+- Constructor property promotion preferred
+- Attributes for metadata
+- Immutable objects when possible
+- Repository pattern for data access
+- Service layer for business logic
+- DTO pattern for data transfer
+- Interface segregation principle
+- Dependency injection
+- Command/Query separation 
+
+
+
+Lessons:
+- 
+
+Scratchpad:
+
+Task: Implement tasks screen with new design patterns
+Based on analysis of GuestList, WeddingDetails, and other pages, we need to:
+
+[X] Plan implementation steps
+[X] Create TasksPage component with new layout
+[X] Update TaskList component styling
+[X] Update TaskForm component styling
+[X] Add task filtering and sorting with new design
+[X] Implement task categories with visual improvements
+[X] Add task status indicators and progress tracking
+[X] Implement drag-and-drop with new styling
+
+Implementation Details:
+1. TasksPage Component
+- Header with back button and title (like EditWeddingPage)
+- Task statistics/progress overview
+- Filter/sort controls with new design
+- Main content area with TaskList
+
+2. TaskList Updates
+- Card-based layout with consistent styling
+- Status indicators with proper colors
+- Category chips with icons
+- Priority indicators
+- Due date display
+- Drag handle styling
+
+3. TaskForm Updates
+- Modal design matching other forms
+- Consistent input styling
+- Category selector with icons
+- Priority selector with colors
+- Date picker styling
+
+4. Visual Improvements
+- Use theme colors and gradients
+- Consistent spacing and typography
+- Proper animations and transitions
+- Loading states and error handling
+
+Progress:
+- Completed implementation of TasksPage with new design
+- Updated TaskList with new card-based layout and styling
+- Updated TaskForm with consistent form design
+- Added route in App.jsx
+- All components now follow the new design patterns
+
+Next Steps:
+- Test the implementation
+- Gather feedback
+- Make any necessary adjustments
+
+# Scratchpad: Budget Cards Debug
+
+## Task
+Debug why the budget cards are not showing the necessary data in the BudgetOverview component.
+
+## Analysis Steps
+[ ] Check the API response structure
+[ ] Verify the wedding ID is being passed correctly
+[ ] Analyze the data transformation in the component
+[ ] Check if the expenses data is being received correctly
+[ ] Verify the calculations for each card
+
+## Current State
+- Budget object is being received
+- Wedding ID is available in budget.wedding.id
+- Expenses are being fetched but might not be processed correctly
+
+## Lessons
+- Always verify the API response structure matches what the component expects
+- Add proper logging for debugging data flow
+- Check both the frontend calculations and backend summary
