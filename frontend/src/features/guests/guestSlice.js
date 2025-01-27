@@ -9,6 +9,14 @@ export const fetchGuests = createAsyncThunk(
     }
 );
 
+export const fetchGuest = createAsyncThunk(
+    'guests/fetchGuest',
+    async ({ weddingId, guestId }) => {
+        const response = await guestService.getGuest(weddingId, guestId);
+        return response.data;
+    }
+);
+
 export const createGuest = createAsyncThunk(
     'guests/createGuest',
     async ({ weddingId, guestData }) => {
@@ -78,6 +86,24 @@ const guestSlice = createSlice({
                 state.loading = false;
                 state.error = action.error.message;
             })
+            // Fetch single guest
+            .addCase(fetchGuest.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchGuest.fulfilled, (state, action) => {
+                state.loading = false;
+                const index = state.guests.findIndex(guest => guest.id === action.payload.id);
+                if (index !== -1) {
+                    state.guests[index] = action.payload;
+                } else {
+                    state.guests.push(action.payload);
+                }
+            })
+            .addCase(fetchGuest.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message;
+            })
             // Create guest
             .addCase(createGuest.fulfilled, (state, action) => {
                 state.guests.push(action.payload);
@@ -106,6 +132,8 @@ export const selectGuests = (state) => state.guests.guests;
 export const selectGuestLoading = (state) => state.guests.loading;
 export const selectGuestError = (state) => state.guests.error;
 export const selectGuestFilters = (state) => state.guests.filters;
+export const selectGuestById = (state, guestId) => 
+    state.guests.guests.find(guest => guest.id === Number(guestId));
 
 export const selectFilteredGuests = (state) => {
     const guests = selectGuests(state);

@@ -1,258 +1,446 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    TextField,
-    MenuItem,
-    Stack
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Stack,
+  Typography,
+  IconButton,
+  Box,
+  Alert,
+  alpha,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { createExpense, updateExpense, fetchBudget, fetchExpenses } from '../../store/slices/budgetSlice';
+import {
+  Close as CloseIcon,
+  Category as CategoryIcon,
+  AttachMoney as MoneyIcon,
+  Schedule as ScheduleIcon,
+} from '@mui/icons-material';
+import { createExpense, updateExpense } from '../../store/slices/budgetSlice';
 
-const EXPENSE_CATEGORIES = [
-    { value: 'venue', label: 'Venue' },
-    { value: 'catering', label: 'Catering' },
-    { value: 'photography', label: 'Photography' },
-    { value: 'videography', label: 'Videography' },
-    { value: 'music', label: 'Music' },
-    { value: 'flowers', label: 'Flowers' },
-    { value: 'decor', label: 'Decor' },
-    { value: 'attire', label: 'Attire' },
-    { value: 'transportation', label: 'Transportation' },
-    { value: 'stationery', label: 'Stationery' },
-    { value: 'gifts', label: 'Gifts' },
-    { value: 'other', label: 'Other' }
+const CATEGORIES = [
+  'Venue',
+  'Catering',
+  'Photography',
+  'Music',
+  'Decor',
+  'Attire',
+  'Transportation',
+  'Other',
 ];
 
-const EXPENSE_STATUS = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'partial', label: 'Partially Paid' },
-    { value: 'paid', label: 'Paid' }
+const STATUSES = [
+  { value: 'pending', label: 'Pending', color: '#E57373' },
+  { value: 'partial', label: 'Partial', color: '#FFB74D' },
+  { value: 'paid', label: 'Paid', color: '#81C784' },
 ];
 
-const ExpenseForm = ({ open, onClose, expense, weddingId }) => {
-    const dispatch = useDispatch();
-    console.log('ExpenseForm rendered with props:', { open, expense, weddingId });
+const ExpenseForm = ({ open, onClose, weddingId, expense }) => {
+  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    description: '',
+    amount: '',
+    category: CATEGORIES[0],
+    status: 'pending',
+    paidAmount: '',
+    dueDate: '',
+  });
 
-    const [formData, setFormData] = React.useState(() => {
-        console.log('Initializing form data with expense:', expense);
-        const initialData = {
-            category: '',
-            description: '',
-            amount: '',
-            status: 'pending',
-            paidAmount: '',
-            dueDate: null
-        };
+  useEffect(() => {
+    if (expense) {
+      setFormData({
+        description: expense.description || '',
+        amount: expense.amount || '',
+        category: expense.category || CATEGORIES[0],
+        status: expense.status || 'pending',
+        paidAmount: expense.paidAmount || '',
+        dueDate: expense.dueDate ? new Date(expense.dueDate).toISOString().split('T')[0] : '',
+      });
+    }
+  }, [expense]);
 
-        if (expense) {
-            const populatedData = {
-                ...initialData,
-                category: expense.category || '',
-                description: expense.description || '',
-                amount: expense.amount?.toString() || '',
-                status: expense.status || 'pending',
-                paidAmount: expense.paidAmount?.toString() || '',
-                dueDate: expense.dueDate ? new Date(expense.dueDate) : null
-            };
-            console.log('Form data initialized with expense:', populatedData);
-            return populatedData;
-        }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-        console.log('Form data initialized with defaults:', initialData);
-        return initialData;
-    });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    // Reset form data when expense changes
-    React.useEffect(() => {
-        console.log('Expense prop changed:', expense);
-        if (expense) {
-            const updatedData = {
-                category: expense.category || '',
-                description: expense.description || '',
-                amount: expense.amount?.toString() || '',
-                status: expense.status || 'pending',
-                paidAmount: expense.paidAmount?.toString() || '',
-                dueDate: expense.dueDate ? new Date(expense.dueDate) : null
-            };
-            console.log('Updating form data with:', updatedData);
-            setFormData(updatedData);
-        } else {
-            const emptyData = {
-                category: '',
-                description: '',
-                amount: '',
-                status: 'pending',
-                paidAmount: '',
-                dueDate: null
-            };
-            console.log('Resetting form data to:', emptyData);
-            setFormData(emptyData);
-        }
-    }, [expense]);
+    try {
+      const data = {
+        ...formData,
+        amount: parseFloat(formData.amount),
+        paidAmount: formData.paidAmount ? parseFloat(formData.paidAmount) : null,
+      };
 
-    const handleChange = (event) => {
-        const { name, value } = event.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+      if (expense) {
+        await dispatch(updateExpense({ weddingId, expenseId: expense.id, data }));
+      } else {
+        await dispatch(createExpense({ weddingId, data }));
+      }
+      onClose();
+    } catch (error) {
+      setError(error.message || 'Failed to save expense');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleDateChange = (date) => {
-        setFormData(prev => ({
-            ...prev,
-            dueDate: date
-        }));
-    };
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        elevation: 0,
+        sx: {
+          borderRadius: '8px',
+          bgcolor: '#FFFFFF',
+          border: '1px solid',
+          borderColor: '#E8E3DD',
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid',
+          borderColor: '#E8E3DD',
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: '1.25rem',
+            fontFamily: 'Cormorant Garamond, serif',
+            color: '#5C5C5C',
+          }}
+        >
+          {expense ? 'Edit Expense' : 'Add Expense'}
+        </Typography>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{
+            color: '#7A6B63',
+            '&:hover': {
+              bgcolor: alpha('#D1BFA5', 0.1),
+            },
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            {error && (
+              <Alert
+                severity="error"
+                sx={{
+                  borderRadius: '8px',
+                  border: '1px solid',
+                  borderColor: alpha('#D32F2F', 0.1),
+                  '& .MuiAlert-icon': {
+                    color: '#D32F2F',
+                  },
+                }}
+              >
+                {error}
+              </Alert>
+            )}
 
-        const data = {
-            ...formData,
-            amount: parseFloat(formData.amount),
-            paidAmount: formData.paidAmount ? parseFloat(formData.paidAmount) : null,
-            dueDate: formData.dueDate ? formData.dueDate.toISOString() : null
-        };
+            <TextField
+              fullWidth
+              label="Description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: '#E8E3DD',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#D1BFA5',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#D1BFA5',
+                  },
+                },
+              }}
+            />
 
-        console.log('Submitting expense form with data:', data);
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Amount"
+                name="amount"
+                type="number"
+                value={formData.amount}
+                onChange={handleChange}
+                required
+                InputProps={{
+                  startAdornment: (
+                    <Box
+                      sx={{
+                        mr: 1,
+                        color: '#7A6B63',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <MoneyIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#E8E3DD',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#D1BFA5',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#D1BFA5',
+                    },
+                  },
+                }}
+              />
 
-        try {
-            let result;
-            if (expense?.id) {
-                result = await dispatch(updateExpense({
-                    weddingId,
-                    expenseId: expense.id,
-                    data
-                })).unwrap();
-            } else {
-                result = await dispatch(createExpense({
-                    weddingId,
-                    data
-                })).unwrap();
-            }
-            console.log('Expense saved successfully:', result);
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  required
+                  sx={{
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#E8E3DD',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#D1BFA5',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#D1BFA5',
+                    },
+                  }}
+                  startAdornment={
+                    <Box
+                      sx={{
+                        mr: 1,
+                        color: '#7A6B63',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <CategoryIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                  }
+                >
+                  {CATEGORIES.map((category) => (
+                    <MenuItem
+                      key={category}
+                      value={category}
+                      sx={{
+                        '&.Mui-selected': {
+                          bgcolor: alpha('#D1BFA5', 0.1),
+                          '&:hover': {
+                            bgcolor: alpha('#D1BFA5', 0.2),
+                          },
+                        },
+                      }}
+                    >
+                      {category}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
 
-            // Immediately fetch fresh data
-            const [budgetResult, expensesResult] = await Promise.all([
-                dispatch(fetchBudget(weddingId)).unwrap(),
-                dispatch(fetchExpenses(weddingId)).unwrap()
-            ]);
-            console.log('Fresh data fetched:', { budgetResult, expensesResult });
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  sx={{
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#E8E3DD',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#D1BFA5',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#D1BFA5',
+                    },
+                  }}
+                >
+                  {STATUSES.map(({ value, label, color }) => (
+                    <MenuItem
+                      key={value}
+                      value={value}
+                      sx={{
+                        '&.Mui-selected': {
+                          bgcolor: alpha(color, 0.1),
+                          '&:hover': {
+                            bgcolor: alpha(color, 0.2),
+                          },
+                        },
+                      }}
+                    >
+                      {label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-            onClose();
-        } catch (error) {
-            console.error('Failed to save expense:', error);
-        }
-    };
+              <TextField
+                fullWidth
+                label="Due Date"
+                name="dueDate"
+                type="date"
+                value={formData.dueDate}
+                onChange={handleChange}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Box
+                      sx={{
+                        mr: 1,
+                        color: '#7A6B63',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <ScheduleIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#E8E3DD',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#D1BFA5',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#D1BFA5',
+                    },
+                  },
+                }}
+              />
+            </Box>
 
-    return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <form onSubmit={handleSubmit}>
-                <DialogTitle>
-                    {expense ? 'Edit Expense' : 'Add New Expense'}
-                </DialogTitle>
-                <DialogContent>
-                    <Stack spacing={3} sx={{ mt: 1 }}>
-                        <TextField
-                            name="category"
-                            label="Category"
-                            select
-                            fullWidth
-                            value={formData.category}
-                            onChange={handleChange}
-                            required
-                        >
-                            {EXPENSE_CATEGORIES.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+            {formData.status === 'partial' && (
+              <TextField
+                fullWidth
+                label="Paid Amount"
+                name="paidAmount"
+                type="number"
+                value={formData.paidAmount}
+                onChange={handleChange}
+                required
+                InputProps={{
+                  startAdornment: (
+                    <Box
+                      sx={{
+                        mr: 1,
+                        color: '#7A6B63',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <MoneyIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#E8E3DD',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#D1BFA5',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#D1BFA5',
+                    },
+                  },
+                }}
+              />
+            )}
+          </Stack>
+        </DialogContent>
 
-                        <TextField
-                            name="description"
-                            label="Description"
-                            fullWidth
-                            value={formData.description}
-                            onChange={handleChange}
-                            required
-                        />
-
-                        <TextField
-                            name="amount"
-                            label="Amount"
-                            type="number"
-                            fullWidth
-                            value={formData.amount}
-                            onChange={handleChange}
-                            required
-                            InputProps={{
-                                startAdornment: '$'
-                            }}
-                        />
-
-                        <TextField
-                            name="status"
-                            label="Payment Status"
-                            select
-                            fullWidth
-                            value={formData.status}
-                            onChange={handleChange}
-                            required
-                        >
-                            {EXPENSE_STATUS.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-
-                        {formData.status === 'partial' && (
-                            <TextField
-                                name="paidAmount"
-                                label="Paid Amount"
-                                type="number"
-                                fullWidth
-                                value={formData.paidAmount}
-                                onChange={handleChange}
-                                required
-                                InputProps={{
-                                    startAdornment: '$'
-                                }}
-                            />
-                        )}
-
-                        <LocalizationProvider dateAdapter={AdapterDateFns}>
-                            <DatePicker
-                                label="Due Date"
-                                value={formData.dueDate}
-                                onChange={handleDateChange}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true
-                                    }
-                                }}
-                            />
-                        </LocalizationProvider>
-                    </Stack>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={onClose}>Cancel</Button>
-                    <Button type="submit" variant="contained">
-                        {expense ? 'Update' : 'Add'} Expense
-                    </Button>
-                </DialogActions>
-            </form>
-        </Dialog>
-    );
+        <DialogActions
+          sx={{
+            p: 2,
+            borderTop: '1px solid',
+            borderColor: '#E8E3DD',
+          }}
+        >
+          <Button
+            onClick={onClose}
+            sx={{
+              color: '#7A6B63',
+              '&:hover': {
+                bgcolor: alpha('#D1BFA5', 0.1),
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={loading}
+            sx={{
+              bgcolor: '#D1BFA5',
+              color: '#FFFFFF',
+              '&:hover': {
+                bgcolor: '#C1AF95',
+              },
+              '&.Mui-disabled': {
+                bgcolor: alpha('#D1BFA5', 0.5),
+                color: '#FFFFFF',
+              },
+            }}
+          >
+            {loading ? 'Saving...' : expense ? 'Save Changes' : 'Add Expense'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
 };
 
 export default ExpenseForm; 

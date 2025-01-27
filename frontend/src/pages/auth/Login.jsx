@@ -5,16 +5,13 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
-  Container,
-  Box,
   Typography,
-  TextField,
   Button,
-  Paper,
   IconButton,
   InputAdornment,
   Divider,
   Alert,
+  Box,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -24,8 +21,9 @@ import {
   Fingerprint as FingerprintIcon,
 } from '@mui/icons-material';
 import { login, clearError } from '../../store/slices/authSlice';
-import { motion } from 'framer-motion';
+import { commonTextFieldStyles } from '../../components/layout/styles';
 import GoogleOAuthButton from '../../components/auth/GoogleOAuthButton';
+import TextField from '../../components/common/form/TextField';
 
 // Capacitor plugins
 import { App } from '@capacitor/app';
@@ -63,7 +61,6 @@ const Login = () => {
     // Check if biometric authentication is available
     const checkBiometric = async () => {
       try {
-        // Only check for biometric if we're in a native app
         if (window?.Capacitor?.isNativePlatform()) {
           const available = await App.isNativePlatform();
           setBiometricAvailable(available);
@@ -88,13 +85,8 @@ const Login = () => {
 
   const handleBiometricAuth = async () => {
     try {
-      // Only proceed with biometric auth if we're in a native app
       if (window?.Capacitor?.isNativePlatform()) {
-        // Trigger haptic feedback
         await Haptics.impact({ style: ImpactStyle.Light });
-        
-        // Here you would implement the actual biometric authentication
-        // using Capacitor's plugins for iOS/Android
         console.log('Biometric auth triggered');
       } else {
         console.log('Biometric auth not available in web environment');
@@ -106,14 +98,10 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     try {
-      console.log('Form submitted with data:', data);
-      // Only trigger haptics if we're in a native app
       if (isMobile && window?.Capacitor?.isNativePlatform()) {
         await Haptics.impact({ style: ImpactStyle.Medium });
       }
-      console.log('Dispatching login action...');
       const result = await dispatch(login(data)).unwrap();
-      console.log('Login result:', result);
       navigate('/');
     } catch (error) {
       console.error('Login failed:', error);
@@ -125,112 +113,164 @@ const Login = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+    <>
+      <Typography 
+        component="h1" 
+        variant="h5" 
+        align="center" 
+        gutterBottom
+        sx={{ 
+          color: '#5C5C5C',
+          fontSize: '1.5rem',
+          fontWeight: 600,
+          fontFamily: 'Cormorant Garamond, serif',
+          mb: 3
+        }}
       >
-        <Box
-          sx={{
-            mt: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+        Welcome Back
+      </Typography>
+
+      {loginError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLoginError('')}>
+          {loginError}
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <TextField
+          label="Email Address"
+          type="email"
+          autoComplete="email"
+          autoFocus
+          error={!!errors.email}
+          helperText={errors.email?.message}
+          sx={commonTextFieldStyles}
+          {...register('email')}
+        />
+
+        <TextField
+          label="Password"
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="current-password"
+          error={!!errors.password}
+          helperText={errors.password?.message}
+          sx={commonTextFieldStyles}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={handleTogglePassword} edge="end">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
           }}
+          {...register('password')}
+        />
+
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          sx={{
+            mt: 3,
+            mb: 2,
+            bgcolor: '#D1BFA5',
+            color: '#FFFFFF',
+            height: 44,
+            borderRadius: '8px',
+            textTransform: 'none',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '0.9375rem',
+            fontWeight: 500,
+            '&:hover': {
+              bgcolor: '#7A6B63',
+            },
+          }}
+          disabled={loading}
         >
-          <Paper
-            elevation={3}
-            sx={{
-              p: 4,
-              width: '100%',
-              borderRadius: 2,
+          {loading ? 'Signing in...' : 'Sign In'}
+        </Button>
+      </form>
+
+      <Divider 
+        sx={{ 
+          my: 2,
+          '&::before, &::after': {
+            borderColor: '#E8E3DD',
+          },
+          '& .MuiDivider-wrapper': {
+            color: '#7A6B63',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '0.875rem',
+          }
+        }}
+      >
+        OR
+      </Divider>
+
+      <GoogleOAuthButton />
+
+      {biometricAvailable && (
+        <>
+          <Divider 
+            sx={{ 
+              my: 2,
+              '&::before, &::after': {
+                borderColor: '#E8E3DD',
+              },
+              '& .MuiDivider-wrapper': {
+                color: '#7A6B63',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '0.875rem',
+              }
             }}
           >
-            <Typography component="h1" variant="h5" align="center" gutterBottom>
-              Welcome Back
-            </Typography>
+            or
+          </Divider>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<FingerprintIcon />}
+            onClick={handleBiometricAuth}
+            sx={{
+              borderColor: '#D1BFA5',
+              color: '#7A6B63',
+              height: 44,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '0.9375rem',
+              fontWeight: 500,
+              '&:hover': {
+                borderColor: '#7A6B63',
+                bgcolor: 'transparent',
+              },
+            }}
+          >
+            Sign in with Biometrics
+          </Button>
+        </>
+      )}
 
-            {loginError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLoginError('')}>
-                {loginError}
-              </Alert>
-            )}
-
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <TextField
-                margin="normal"
-                fullWidth
-                label="Email Address"
-                autoComplete="email"
-                autoFocus
-                {...register('email')}
-                error={!!errors.email}
-                helperText={errors.email?.message}
-              />
-
-              <TextField
-                margin="normal"
-                fullWidth
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                {...register('password')}
-                error={!!errors.password}
-                helperText={errors.password?.message}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleTogglePassword} edge="end">
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
-                disabled={loading}
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Button>
-            </form>
-
-            <Divider sx={{ my: 2 }}>OR</Divider>
-
-            <GoogleOAuthButton />
-
-            {biometricAvailable && (
-              <>
-                <Divider sx={{ my: 2 }}>or</Divider>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<FingerprintIcon />}
-                  onClick={handleBiometricAuth}
-                >
-                  Sign in with Biometrics
-                </Button>
-              </>
-            )}
-
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Button
-                color="primary"
-                onClick={() => navigate('/register')}
-                sx={{ textTransform: 'none' }}
-              >
-                Don't have an account? Sign Up
-              </Button>
-            </Box>
-          </Paper>
-        </Box>
-      </motion.div>
-    </Container>
+      <Box sx={{ mt: 2, textAlign: 'center' }}>
+        <Button
+          color="primary"
+          onClick={() => navigate('/register')}
+          sx={{
+            textTransform: 'none',
+            color: '#7A6B63',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '0.875rem',
+            '&:hover': {
+              bgcolor: 'transparent',
+              color: '#D1BFA5',
+            },
+          }}
+        >
+          Don't have an account? Sign Up
+        </Button>
+      </Box>
+    </>
   );
 };
 

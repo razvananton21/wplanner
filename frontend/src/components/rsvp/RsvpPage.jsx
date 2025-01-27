@@ -23,7 +23,13 @@ import {
   Paper,
   styled,
   useTheme,
-  alpha
+  alpha,
+  Stack,
+  ButtonGroup,
+  Fade,
+  IconButton,
+  Fab,
+  Zoom
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -32,6 +38,12 @@ import { rsvpService } from '../../services/rsvpService';
 import { useDispatch } from 'react-redux';
 import { fetchGuests } from '../../features/guests/guestSlice';
 import InvitationViewer from '../invitation/InvitationViewer';
+import TextArea from '../common/form/TextArea';
+import { 
+  Download as DownloadIcon, 
+  HowToReg as HowToRegIcon, 
+  ArrowBack as ArrowBackIcon 
+} from '@mui/icons-material';
 
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -238,6 +250,58 @@ const AttendancePill = styled(Paper)(({ theme }) => ({
   }
 }));
 
+const commonTextFieldStyles = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '8px',
+    bgcolor: '#FFFFFF',
+    minHeight: 44,
+    '& fieldset': {
+      borderColor: '#E8E3DD',
+      borderWidth: '1px',
+      transition: 'all 0.2s ease',
+    },
+    '&:hover fieldset': {
+      borderColor: '#D1BFA5',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#D1BFA5',
+      borderWidth: '1.5px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: '#7A6B63',
+    fontSize: '0.875rem',
+    fontFamily: 'Inter, sans-serif',
+    '&.Mui-focused': {
+      color: '#D1BFA5',
+    },
+  },
+  '& .MuiInputBase-input': {
+    fontSize: '1rem',
+    color: '#6A6A6A',
+    fontFamily: 'Inter, sans-serif',
+    padding: '12px',
+  },
+  '& .MuiInputBase-inputMultiline': {
+    padding: '12px',
+  },
+};
+
+const SectionTitle = ({ children }) => (
+  <Typography 
+    variant="h6" 
+    sx={{ 
+      color: '#7A6B63',
+      fontFamily: 'Cormorant Garamond, serif',
+      fontSize: { xs: '1.125rem', sm: '1.25rem' },
+      mb: 2.5
+    }}
+  >
+    {children}
+  </Typography>
+);
+
 export default function RsvpPage() {
   const { token } = useParams();
   const [loading, setLoading] = useState(true);
@@ -247,18 +311,22 @@ export default function RsvpPage() {
   const [formData, setFormData] = useState({
     attending: true,
     hasPlusOne: false,
+    plusOneAttending: false,
     plusOne: {
-      attending: true,
       firstName: '',
       lastName: '',
       email: '',
+      dietaryRestrictions: '',
       responses: {}
-    }
+    },
+    responses: {},
+    dietaryRestrictions: ''
   });
   const [guest, setGuest] = useState(null);
-  const [needsUpdate, setNeedsUpdate] = useState(false);
-  const [updateMessage, setUpdateMessage] = useState(null);
   const [showRsvpForm, setShowRsvpForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [pdfUrl, setPdfUrl] = useState(null);
   const dispatch = useDispatch();
 
   const theme = useTheme();
@@ -271,56 +339,39 @@ export default function RsvpPage() {
           rsvpService.getGuest(token),
           rsvpService.getFields(token)
         ]);
-        
-        setGuest(guestResponse.data);
-        setFields(fieldsResponse.data);
-        
-        // Only check for updates if there are existing responses
-        const hasResponses = guestResponse.data.responses && guestResponse.data.responses.length > 0;
-        setNeedsUpdate(hasResponses && guestResponse.data.needsUpdate);
-        setUpdateMessage(guestResponse.data.message);
-        
-        // Initialize form data with existing responses or defaults
-        const initialFormData = {
-          // Set attending to true for 'pending' or 'confirmed' status, false for 'declined'
-          attending: guestResponse.data.status === 'declined' ? false : true,
-          hasPlusOne: guestResponse.data.canBringPlusOne || false,
+
+        setFields(fieldsResponse.data || []);
+        const guestData = guestResponse.data;
+        setGuest(guestData);
+
+        setFormData(prev => ({
+          ...prev,
+          attending: guestData.status !== 'declined',
+          hasPlusOne: guestData.canBringPlusOne || false,
+          plusOneAttending: guestData.plusOneDetails?.attending || false,
           plusOne: {
-            attending: guestResponse.data.plusOneDetails?.status === 'confirmed' ?? true,
-            firstName: guestResponse.data.plusOneDetails?.firstName ?? '',
-            lastName: guestResponse.data.plusOneDetails?.lastName ?? '',
-            email: guestResponse.data.plusOneDetails?.email ?? '',
-            responses: {}
-          }
-        };
+            firstName: guestData.plusOneDetails?.firstName || '',
+            lastName: guestData.plusOneDetails?.lastName || '',
+            email: guestData.plusOneDetails?.email || '',
+            dietaryRestrictions: guestData.plusOneDetails?.dietaryRestrictions || '',
+            responses: guestData.plusOneDetails?.responses || {}
+          },
+          responses: guestData.responses || {},
+          dietaryRestrictions: guestData.dietaryRestrictions || ''
+        }));
 
-        // If there are existing responses, add them to the form data
-        if (guestResponse.data.responses) {
-          guestResponse.data.responses.forEach(response => {
-            if (response && response.field) {
-              initialFormData[response.field.id.toString()] = response.value;
-            }
-          });
+        if (guestData.wedding?.invitationPdfUrl) {
+          console.log('Setting PDF URL:', guestData.wedding.invitationPdfUrl);
+          setPdfUrl(guestData.wedding.invitationPdfUrl);
+        } else {
+          setShowRsvpForm(true);
+          console.warn('No invitation PDF URL found in guest data');
         }
-
-        // If there are plus one responses, add them to the form data
-        if (guestResponse.data.plusOneDetails?.responses) {
-          guestResponse.data.plusOneDetails.responses.forEach(response => {
-            if (response && response.field) {
-              initialFormData.plusOne.responses[response.field.id.toString()] = response.value;
-            }
-          });
-        }
-
-        // If the guest has a plus one, make sure hasPlusOne is set to true
-        if (guestResponse.data.plusOneDetails) {
-          initialFormData.hasPlusOne = true;
-        }
-
-        setFormData(initialFormData);
+        
+        setLoading(false);
       } catch (err) {
-        setError(err.message || 'Failed to load RSVP form');
-      } finally {
+        console.error('Error fetching RSVP form:', err);
+        setError('Failed to load RSVP form. Please try again later.');
         setLoading(false);
       }
     };
@@ -338,38 +389,33 @@ export default function RsvpPage() {
     try {
       const responses = formData.attending ? fields
         .filter(field => field && field.id)
-        .map(field => {
-          const fieldId = field.id.toString();
-          const value = formData[fieldId] ?? '';
-          return {
-            fieldId: field.id,
-            value: String(value)
-          };
-        }) : [];
+        .map(field => ({
+          fieldId: field.id,
+          value: formData.responses[field.id.toString()] || ''
+        })) : [];
 
-      const plusOneResponses = (formData.attending && formData.hasPlusOne && formData.plusOne.attending) ? fields
-        .filter(field => field && field.id)
-        .map(field => {
-          const fieldId = field.id.toString();
-          const value = formData.plusOne.responses[fieldId] ?? '';
-          return {
-            fieldId: field.id,
-            value: String(value)
-          };
-        }) : [];
+      const plusOneResponses = (formData.attending && formData.hasPlusOne && formData.plusOneAttending) ? fields
+        .filter(field => field && field.id && !field.excludeFromPlusOne)
+        .map(field => ({
+          fieldId: field.id,
+          value: formData.plusOne.responses[field.id.toString()] || ''
+        })) : [];
 
       const submitData = {
-        attending: formData.attending,
+        attending: formData.attending === 'true' || formData.attending === true,
         responses,
-        plusOne: formData.hasPlusOne ? {
-          attending: formData.plusOne.attending,
+        plusOne: formData.plusOneAttending ? {
+          attending: true,
           firstName: formData.plusOne.firstName,
           lastName: formData.plusOne.lastName,
-          email: formData.plusOne.email,
+          email: formData.plusOne.email || null,
+          dietaryRestrictions: formData.plusOne.dietaryRestrictions || '',
           responses: plusOneResponses
-        } : null
+        } : null,
+        dietaryRestrictions: formData.dietaryRestrictions || ''
       };
 
+      console.log('Submitting RSVP data:', submitData);
       await rsvpService.submitRsvp(token, submitData);
 
       if (guest?.wedding?.id) {
@@ -378,7 +424,8 @@ export default function RsvpPage() {
 
       setSuccess(true);
     } catch (err) {
-      setError(err.message || 'Failed to submit RSVP');
+      console.error('Error submitting RSVP:', err);
+      setError(err.response?.data?.detail || 'Failed to submit RSVP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -392,75 +439,86 @@ export default function RsvpPage() {
           ...prev.plusOne,
           responses: {
             ...prev.plusOne.responses,
-            [fieldId.toString()]: value
+            [fieldId]: value
           }
         }
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        [fieldId.toString()]: value
+        responses: {
+          ...prev.responses,
+          [fieldId]: value
+        }
       }));
     }
   };
 
   const renderField = (field, isPlusOne = false) => {
-    const fieldValue = isPlusOne 
-      ? formData.plusOne.responses[field.id] || ''
-      : formData[field.id] || '';
+    if (!field || !field.id) return null;
 
-    switch (field.type) {
+    const fieldId = field.id.toString();
+    const fieldValue = isPlusOne 
+      ? formData.plusOne.responses[fieldId] 
+      : formData.responses[fieldId];
+
+    switch (field.type?.toLowerCase()) {
       case 'text':
         return (
           <StyledTextField
-            fullWidth
+            key={fieldId}
             label={field.label}
-            value={fieldValue}
-            onChange={(e) => handleFieldChange(field.id, e.target.value, isPlusOne)}
+            value={fieldValue || ''}
+            onChange={(e) => handleFieldChange(fieldId, e.target.value, isPlusOne)}
             required={field.required}
-            placeholder={field.placeholder}
             helperText={field.helpText}
-            sx={{ mb: 2 }}
+            fullWidth
           />
         );
 
       case 'textarea':
         return (
-          <StyledTextField
+          <TextArea
+            key={fieldId}
+            label={field.label}
+            value={fieldValue || ''}
+            onChange={(e) => handleFieldChange(fieldId, e.target.value, isPlusOne)}
+            required={field.required}
+            helperText={field.helpText}
             fullWidth
             multiline
-            rows={3}
-            label={field.label}
-            value={fieldValue}
-            onChange={(e) => handleFieldChange(field.id, e.target.value, isPlusOne)}
-            required={field.required}
-            placeholder={field.placeholder}
-            helperText={field.helpText}
-            sx={{ mb: 2 }}
+            rows={4}
+            sx={commonTextFieldStyles}
           />
         );
 
       case 'select':
         return (
-          <StyledFormControl fullWidth required={field.required} sx={{ mb: 2 }}>
+          <StyledFormControl key={fieldId} fullWidth>
             <InputLabel>{field.label}</InputLabel>
             <Select
-              value={fieldValue}
+              value={fieldValue || ''}
+              onChange={(e) => handleFieldChange(fieldId, e.target.value, isPlusOne)}
               label={field.label}
-              onChange={(e) => handleFieldChange(field.id, e.target.value, isPlusOne)}
+              required={field.required}
             >
-              {field.options?.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
+              {(field.options || []).map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
                 </MenuItem>
               ))}
             </Select>
-            {field.helpText && (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                {field.helpText}
-              </Typography>
-            )}
           </StyledFormControl>
+        );
+
+      case 'switch':
+        return (
+          <Switch
+            key={`${fieldId}${isPlusOne ? '-plusone' : ''}`}
+            label={field.label}
+            checked={fieldValue || false}
+            onChange={(e) => handleFieldChange(fieldId, e.target.checked, isPlusOne)}
+          />
         );
 
       case 'checkbox':
@@ -503,7 +561,7 @@ export default function RsvpPage() {
                 control={
                   <StyledCheckbox
                     checked={fieldValue || false}
-                    onChange={(e) => handleFieldChange(field.id, e.target.checked, isPlusOne)}
+                    onChange={(e) => handleFieldChange(fieldId, e.target.checked, isPlusOne)}
                     sx={{
                       color: theme.palette.text.secondary,
                       '&.Mui-checked': {
@@ -558,7 +616,7 @@ export default function RsvpPage() {
             </FormLabel>
             <RadioGroup
               value={fieldValue}
-              onChange={(e) => handleFieldChange(field.id, e.target.value, isPlusOne)}
+              onChange={(e) => handleFieldChange(fieldId, e.target.value, isPlusOne)}
               sx={{
                 gap: 1.5
               }}
@@ -628,11 +686,11 @@ export default function RsvpPage() {
 
       case 'date':
         return (
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <LocalizationProvider key={fieldId} dateAdapter={AdapterDateFns}>
             <StyledDatePicker
               label={field.label}
               value={fieldValue || null}
-              onChange={(value) => handleFieldChange(field.id, value, isPlusOne)}
+              onChange={(value) => handleFieldChange(fieldId, value, isPlusOne)}
               slotProps={{
                 textField: {
                   required: field.required,
@@ -650,253 +708,320 @@ export default function RsvpPage() {
     }
   };
 
-  const handleRsvpClick = () => {
-    setShowRsvpForm(true);
+  const handlePageClick = () => {
+    setCurrentPage(prev => (prev + 1) % totalPages);
   };
 
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 3,
-        gap: 3
-      }}
-    >
-      {loading ? (
+  const handlePdfLoad = ({ numPages }) => {
+    setTotalPages(numPages);
+  };
+
+  const handleDownloadPdf = () => {
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <CircularProgress />
-      ) : error ? (
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
         <Alert severity="error">{error}</Alert>
-      ) : success ? (
-        <StyledCard>
-          <CardContent sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h4" gutterBottom color="primary">
-              Thank You!
-            </Typography>
-            <Typography 
-              variant="h5" 
-              color="text.secondary" 
-              sx={{ 
-                mb: 4,
-                fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                fontWeight: 500,
-                letterSpacing: '-0.3px'
-              }}
-            >
-              Your RSVP has been successfully submitted.
-            </Typography>
-            <Typography 
-              variant="body1" 
-              color="text.secondary"
-              sx={{ mb: 4 }}
-            >
-              {formData.attending 
-                ? "We're looking forward to celebrating with you!" 
-                : "We'll miss you, but thank you for letting us know."}
-            </Typography>
-            {formData.attending && formData.hasPlusOne && formData.plusOne.attending && (
-              <Typography 
-                variant="body1" 
-                color="text.secondary"
-                sx={{ mb: 4 }}
-              >
-                We've also registered {formData.plusOne.firstName} as your plus one.
-              </Typography>
-            )}
-          </CardContent>
-        </StyledCard>
-      ) : (
+      </Box>
+    );
+  }
+
+  if (success) {
+    return (
+      <Box 
+        sx={{ 
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: '#FAF8F4',
+          p: 3
+        }}
+      >
+        <Box 
+          sx={{ 
+            maxWidth: 600,
+            width: '100%',
+            textAlign: 'center',
+            p: { xs: 3, sm: 4 },
+            bgcolor: '#FFFFFF',
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              color: '#7A6B63',
+              fontFamily: 'Cormorant Garamond, serif',
+              mb: 2
+            }}
+          >
+            Thank You!
+          </Typography>
+          <Typography sx={{ color: '#6A6A6A', mb: 3 }}>
+            Your RSVP has been successfully submitted.
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      p: { xs: 2, sm: 3 },
+      position: 'relative',
+      bgcolor: '#FAF8F4'
+    }}>
+      {showRsvpForm && pdfUrl && (
+        <Fab
+          color="primary"
+          aria-label="back"
+          onClick={() => setShowRsvpForm(false)}
+          sx={{
+            position: 'fixed',
+            top: 16,
+            left: 16,
+            bgcolor: '#D1BFA5',
+            '&:hover': {
+              bgcolor: alpha('#D1BFA5', 0.9)
+            }
+          }}
+        >
+          <ArrowBackIcon />
+        </Fab>
+      )}
+
+      {!showRsvpForm && pdfUrl ? (
         <>
-          {guest?.wedding?.invitationPdfUrl && !showRsvpForm && (
-            <InvitationViewer 
-              pdfUrl={guest.wedding.invitationPdfUrl}
-              onRsvpClick={handleRsvpClick}
-            />
-          )}
+          <Box sx={{ 
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <InvitationViewer pdfUrl={pdfUrl} />
+          </Box>
 
-          {(!guest?.wedding?.invitationPdfUrl || showRsvpForm) && (
-            <StyledCard>
-              <CardContent sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="h4" gutterBottom color="primary">
-                  Wedding RSVP
-                </Typography>
-
-                {guest && (
-                  <Typography 
-                    variant="h5" 
-                    color="text.secondary" 
-                    align="center" 
-                    sx={{ 
-                      mb: 4,
-                      fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                      fontWeight: 500,
-                      letterSpacing: '-0.3px'
+          {/* Floating Action Buttons */}
+          <Box
+            sx={{
+              position: 'fixed',
+              bottom: 16,
+              right: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2
+            }}
+          >
+            <Zoom in={true} style={{ transitionDelay: '200ms' }}>
+              <Fab
+                color="primary"
+                aria-label="download"
+                onClick={handleDownloadPdf}
+                sx={{
+                  bgcolor: '#D1BFA5',
+                  '&:hover': {
+                    bgcolor: alpha('#D1BFA5', 0.9)
+                  }
+                }}
+              >
+                <DownloadIcon />
+              </Fab>
+            </Zoom>
+            <Zoom in={true} style={{ transitionDelay: '300ms' }}>
+              <Fab
+                color="primary"
+                aria-label="rsvp"
+                onClick={() => setShowRsvpForm(true)}
+                sx={{
+                  bgcolor: '#D1BFA5',
+                  '&:hover': {
+                    bgcolor: alpha('#D1BFA5', 0.9)
+                  }
+                }}
+              >
+                <HowToRegIcon />
+              </Fab>
+            </Zoom>
+          </Box>
+        </>
+      ) : (
+        <StyledCard>
+          <CardContent>
+            <Typography variant="h4" component="h1" gutterBottom align="center" 
+              sx={{ 
+                fontFamily: 'Cormorant Garamond, serif',
+                color: '#7A6B63',
+                mb: 4
+              }}>
+              Wedding RSVP
+            </Typography>
+            
+            <Fade in={showRsvpForm || !pdfUrl}>
+              <Box 
+                component="form" 
+                onSubmit={handleSubmit}
+                sx={{ 
+                  maxWidth: 800,
+                  mx: 'auto',
+                  bgcolor: '#FFFFFF',
+                  borderRadius: 2,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  overflow: 'hidden'
+                }}
+              >
+                <Box
+                  sx={{
+                    bgcolor: '#FAF8F4',
+                    borderBottom: '1px solid',
+                    borderColor: '#E8E3DD',
+                    p: { xs: 2.5, sm: 3 },
+                    textAlign: 'center'
+                  }}
+                >
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      color: '#7A6B63',
+                      fontFamily: 'Cormorant Garamond, serif',
+                      fontSize: { xs: '1.75rem', sm: '2.25rem' },
+                      mb: 1
                     }}
                   >
-                    Hello {guest.firstName} {guest.lastName}!
+                    Wedding RSVP
                   </Typography>
-                )}
-
-                {needsUpdate && updateMessage && guest?.responses?.length > 0 && (
-                  <Alert 
-                    severity="info" 
-                    sx={{ 
-                      mb: 4,
-                      borderRadius: theme.spacing(1.5),
-                      backgroundColor: alpha(theme.palette.info.main, 0.08),
-                      border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                      '& .MuiAlert-icon': {
-                        color: theme.palette.info.main
-                      }
+                  <Typography
+                    sx={{
+                      color: '#6A6A6A',
+                      fontSize: { xs: '0.875rem', sm: '1rem' }
                     }}
                   >
-                    {updateMessage}
-                  </Alert>
-                )}
-                
-                <form onSubmit={handleSubmit}>
-                  <Box 
-                    sx={{ 
-                      mb: 4,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 1
-                    }}
-                  >
-                    <AttendancePill elevation={0}>
-                      <Typography 
-                        variant="h6"
-                        align="center"
-                        sx={{ 
-                          fontWeight: 600,
-                          color: formData.attending ? 'primary.main' : 'text.secondary',
-                          transition: 'color 0.3s ease',
-                          fontSize: { xs: '1.1rem', sm: '1.2rem' },
-                          mb: 0.5
-                        }}
-                      >
-                        Will you attend?
-                      </Typography>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center',
-                        gap: 1
-                      }}>
-                        <Typography 
-                          variant="body1"
-                          sx={{ 
-                            opacity: !formData.attending ? 1 : 0.5,
-                            transition: 'opacity 0.3s ease',
-                            fontWeight: 500
+                    Please fill out this form to confirm your attendance
+                  </Typography>
+                </Box>
+
+                <Box sx={{ p: { xs: 2.5, sm: 3 } }}>
+                  <Stack spacing={4}>
+                    <Box>
+                      <SectionTitle>Will you be attending?</SectionTitle>
+                      <FormControl required>
+                        <RadioGroup
+                          value={formData.attending}
+                          onChange={(e) => {
+                            const attending = e.target.value === 'true';
+                            setFormData(prev => ({
+                              ...prev,
+                              attending: e.target.value,
+                              plusOneAttending: attending ? prev.plusOneAttending : false
+                            }));
                           }}
                         >
-                          No
-                        </Typography>
-                        <StyledSwitch
-                          checked={formData.attending}
-                          onChange={(e) => handleFieldChange('attending', e.target.checked)}
-                          color="primary"
-                        />
-                        <Typography 
-                          variant="body1"
-                          sx={{ 
-                            opacity: formData.attending ? 1 : 0.5,
-                            transition: 'opacity 0.3s ease',
-                            fontWeight: 500
-                          }}
-                        >
-                          Yes
-                        </Typography>
-                      </Box>
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary"
-                        align="center"
-                        sx={{ 
-                          mt: 0.5,
-                          fontSize: '0.9rem',
-                          fontStyle: 'italic'
-                        }}
-                      >
-                        {formData.attending 
-                          ? "We're so happy you'll be joining us!" 
-                          : "We'll miss you, but we understand"}
-                      </Typography>
-                    </AttendancePill>
-                  </Box>
+                          <FormControlLabel 
+                            value="true"
+                            control={
+                              <Radio 
+                                sx={{
+                                  color: '#D1BFA5',
+                                  '&.Mui-checked': {
+                                    color: '#D1BFA5',
+                                  },
+                                }}
+                              />
+                            }
+                            label="Yes, I'll be there!"
+                          />
+                          <FormControlLabel
+                            value="false"
+                            control={
+                              <Radio 
+                                sx={{
+                                  color: '#D1BFA5',
+                                  '&.Mui-checked': {
+                                    color: '#D1BFA5',
+                                  },
+                                }}
+                              />
+                            }
+                            label="No, I can't make it"
+                          />
+                        </RadioGroup>
+                      </FormControl>
+                    </Box>
 
-                  {formData.attending && (
-                    <>
-                      {Object.entries(
-                        fields.reduce((acc, field) => {
-                          if (!acc[field.section]) {
-                            acc[field.section] = [];
-                          }
-                          acc[field.section].push(field);
-                          return acc;
-                        }, {})
-                      ).map(([section, sectionFields]) => (
-                        <SectionPaper key={section} elevation={0}>
-                          <Typography 
-                            variant="h6" 
-                            sx={{ 
-                              mb: 2,
-                              color: 'primary.main',
-                              fontWeight: 'medium'
-                            }}
-                          >
-                            {SECTIONS.find(s => s.value === section)?.label || section}
-                          </Typography>
-                          <Box sx={{ '& > *': { mb: 2 } }}>
-                            {sectionFields.map(field => renderField(field, false))}
-                          </Box>
-                        </SectionPaper>
-                      ))}
+                    {(formData.attending === 'true' || formData.attending === true) && (
+                      <>
+                        <Box>
+                          <SectionTitle>Your Information</SectionTitle>
+                          <Stack spacing={2.5}>
+                            {fields.map(field => renderField(field))}
+                          </Stack>
+                        </Box>
 
-                      {guest?.canBringPlusOne && (
-                        <SectionPaper elevation={0}>
-                          <Box sx={{ mb: 3 }}>
-                            <Typography 
-                              variant="h6" 
-                              sx={{ 
-                                mb: 2,
-                                color: 'primary.main',
-                                fontWeight: 'medium'
+                        {formData.hasPlusOne && (
+                          <Box>
+                            <SectionTitle>Plus One</SectionTitle>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                mb: 3,
+                                borderRadius: 2,
+                                border: '1px solid',
+                                borderColor: formData.plusOneAttending ? 'primary.main' : 'divider',
+                                backgroundColor: formData.plusOneAttending 
+                                  ? alpha('#D1BFA5', 0.04)
+                                  : 'rgba(255, 255, 255, 0.8)',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  backgroundColor: formData.plusOneAttending 
+                                    ? alpha('#D1BFA5', 0.08)
+                                    : 'rgba(255, 255, 255, 0.9)',
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                }
                               }}
                             >
-                              Additional Guest
-                            </Typography>
-                            <FormControlLabel
-                              control={
-                                <StyledSwitch
-                                  checked={formData.hasPlusOne}
-                                  onChange={(e) => setFormData(prev => ({
-                                    ...prev,
-                                    hasPlusOne: e.target.checked
-                                  }))}
-                                />
-                              }
-                              label="I'm bringing a guest"
-                            />
-                          </Box>
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    checked={formData.plusOneAttending}
+                                    onChange={(e) => setFormData(prev => ({
+                                      ...prev,
+                                      plusOneAttending: e.target.checked
+                                    }))}
+                                    sx={{
+                                      color: '#D1BFA5',
+                                      '&.Mui-checked': {
+                                        color: '#D1BFA5',
+                                      },
+                                    }}
+                                  />
+                                }
+                                label="I'm bringing a plus one"
+                              />
+                            </Paper>
 
-                          {formData.hasPlusOne && (
-                            <Box sx={{ mt: 2 }}>
-                              <Typography 
-                                variant="subtitle1" 
-                                color="text.secondary"
-                                sx={{ mb: 3 }}
-                              >
-                                Please provide your guest's details
-                              </Typography>
-
-                              <Box sx={{ mb: 3 }}>
+                            {formData.plusOneAttending && (
+                              <Stack spacing={2.5}>
                                 <StyledTextField
-                                  fullWidth
                                   label="First Name"
                                   value={formData.plusOne.firstName}
                                   onChange={(e) => setFormData(prev => ({
@@ -907,10 +1032,9 @@ export default function RsvpPage() {
                                     }
                                   }))}
                                   required
-                                  sx={{ mb: 2 }}
+                                  fullWidth
                                 />
                                 <StyledTextField
-                                  fullWidth
                                   label="Last Name"
                                   value={formData.plusOne.lastName}
                                   onChange={(e) => setFormData(prev => ({
@@ -921,12 +1045,10 @@ export default function RsvpPage() {
                                     }
                                   }))}
                                   required
-                                  sx={{ mb: 2 }}
+                                  fullWidth
                                 />
                                 <StyledTextField
-                                  fullWidth
                                   label="Email"
-                                  type="email"
                                   value={formData.plusOne.email}
                                   onChange={(e) => setFormData(prev => ({
                                     ...prev,
@@ -935,57 +1057,63 @@ export default function RsvpPage() {
                                       email: e.target.value
                                     }
                                   }))}
-                                  sx={{ mb: 2 }}
+                                  fullWidth
                                 />
-                              </Box>
+                                <TextArea
+                                  label="Dietary Restrictions"
+                                  value={formData.plusOne.dietaryRestrictions}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    plusOne: {
+                                      ...prev.plusOne,
+                                      dietaryRestrictions: e.target.value
+                                    }
+                                  }))}
+                                  fullWidth
+                                  multiline
+                                  rows={4}
+                                  sx={commonTextFieldStyles}
+                                />
+                                {fields
+                                  .filter(field => !field.excludeFromPlusOne)
+                                  .map(field => renderField(field, true))
+                                }
+                              </Stack>
+                            )}
+                          </Box>
+                        )}
+                      </>
+                    )}
+                  </Stack>
 
-                              {Object.entries(
-                                fields.reduce((acc, field) => {
-                                  if (!acc[field.section]) {
-                                    acc[field.section] = [];
-                                  }
-                                  acc[field.section].push(field);
-                                  return acc;
-                                }, {})
-                              ).map(([section, sectionFields]) => (
-                                <Box key={`plusone-${section}`} sx={{ mb: 3 }}>
-                                  <Typography 
-                                    variant="h6" 
-                                    sx={{ 
-                                      mb: 2,
-                                      color: 'primary.main',
-                                      fontWeight: 'medium'
-                                    }}
-                                  >
-                                    {SECTIONS.find(s => s.value === section)?.label || section}
-                                  </Typography>
-                                  <Box sx={{ '& > *': { mb: 2 } }}>
-                                    {sectionFields.map(field => renderField(field, true))}
-                                  </Box>
-                                </Box>
-                              ))}
-                            </Box>
-                          )}
-                        </SectionPaper>
-                      )}
-                    </>
-                  )}
-
-                  <StyledButton
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    size="large"
-                    disabled={loading}
-                  >
-                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Submit RSVP'}
-                  </StyledButton>
-                </form>
-              </CardContent>
-            </StyledCard>
-          )}
-        </>
+                  <Box sx={{ mt: 4, textAlign: 'center' }}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={loading || (formData.plusOneAttending && (!formData.plusOne.firstName || !formData.plusOne.lastName))}
+                      sx={{
+                        bgcolor: '#D1BFA5',
+                        color: '#FFFFFF',
+                        px: 4,
+                        py: 1.5,
+                        fontSize: '1rem',
+                        '&:hover': {
+                          bgcolor: '#7A6B63',
+                        },
+                        '&.Mui-disabled': {
+                          bgcolor: alpha('#D1BFA5', 0.5),
+                          color: 'white'
+                        }
+                      }}
+                    >
+                      {loading ? 'Submitting...' : 'Submit RSVP'}
+                    </Button>
+                  </Box>
+                </Box>
+              </Box>
+            </Fade>
+          </CardContent>
+        </StyledCard>
       )}
     </Box>
   );

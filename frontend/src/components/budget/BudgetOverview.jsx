@@ -1,210 +1,276 @@
-import React, { useState } from 'react';
-import { useSelector, shallowEqual } from 'react-redux';
+import React, { useEffect, useState } from 'react';
 import {
-    Box,
-    Card,
-    CardContent,
-    Typography,
-    Grid,
-    LinearProgress,
-    Divider,
-    Stack,
-    Paper,
-    Alert,
-    IconButton
+  Box,
+  Typography,
+  Stack,
+  Paper,
+  Button,
 } from '@mui/material';
 import {
-    ExpandMore as ExpandMoreIcon,
-    ExpandLess as ExpandLessIcon
+  AccountBalance,
+  Receipt,
+  TrendingUp,
+  CheckCircle,
+  Schedule,
+  MonetizationOn,
+  Category,
 } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+import budgetService from '../../services/budgetService';
 
-const StyledCard = styled(Card)(({ theme }) => ({
-    background: 'rgba(255, 255, 255, 0.8)',
-    backdropFilter: 'blur(10px)',
-    borderRadius: theme.shape.borderRadius * 2,
-    boxShadow: theme.shadows[3],
-    transition: 'transform 0.2s ease-in-out',
-    '&:hover': {
-        transform: 'translateY(-4px)',
-    }
-}));
-
-const StatCard = ({ title, value }) => (
-    <Box 
-        sx={{ 
-            p: 2, 
-            bgcolor: 'background.paper', 
-            borderRadius: 1, 
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-            transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-            '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-            }
+const StatCard = ({ icon: Icon, label, value, color }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: 2,
+      bgcolor: '#FFFFFF',
+      border: '1px solid',
+      borderColor: '#E8E3DD',
+      borderRadius: '16px',
+      flex: 1,
+      minWidth: { xs: '100%', sm: 0 },
+      transition: 'all 0.2s ease-in-out',
+      '&:hover': {
+        borderColor: '#D1BFA5',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.05)',
+      },
+    }}
+  >
+    <Stack direction="row" spacing={2} alignItems="center">
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: `${color}15`,
+          borderRadius: '8px',
+          p: 1,
         }}
-    >
-        <Typography variant="body2" color="textSecondary" gutterBottom>
-            {title}
+      >
+        <Icon sx={{ fontSize: 20, color: color }} />
+      </Box>
+      <Box>
+        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+          {label}
         </Typography>
-        <Typography variant="h4" component="div" sx={{ fontWeight: 500 }}>
-            ${value.toLocaleString()}
+        <Typography variant="subtitle1" sx={{ fontSize: '1.125rem', fontWeight: 500 }}>
+          {value}
         </Typography>
-    </Box>
+      </Box>
+    </Stack>
+  </Paper>
 );
 
-const CategoryProgress = ({ category, spent, totalBudget }) => {
-    const percentage = (spent / totalBudget) * 100;
+const CategoryProgress = ({ category, amount, total }) => {
+  const percentage = total > 0 ? Math.round((amount / total) * 100) : 0;
+  const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
-    return (
-        <Box mb={2}>
-            <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{category}</Typography>
-                <Typography variant="body2" color="textSecondary">
-                    ${spent.toLocaleString()} ({percentage.toFixed(1)}% of total)
-                </Typography>
-            </Box>
-            <LinearProgress
-                variant="determinate"
-                value={percentage}
-                sx={{
-                    height: 6,
-                    borderRadius: 3,
-                    bgcolor: 'rgba(0, 0, 0, 0.08)',
-                    '& .MuiLinearProgress-bar': {
-                        bgcolor: '#2E2957',
-                        borderRadius: 3,
-                    }
-                }}
-            />
-        </Box>
-    );
+  return (
+    <Box sx={{ mb: 2, '&:last-child': { mb: 0 } }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+        <Typography variant="body2">{category}</Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            {formattedAmount}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            ({percentage}%)
+          </Typography>
+        </Stack>
+      </Stack>
+      <Box
+        sx={{
+          height: 8,
+          bgcolor: '#F5F5F5',
+          borderRadius: 4,
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        <Box
+          sx={{
+            width: `${percentage}%`,
+            height: '100%',
+            bgcolor: '#D1BFA5',
+            transition: 'width 0.5s ease-in-out',
+          }}
+        />
+      </Box>
+    </Box>
+  );
 };
 
-const SectionHeader = ({ title, expanded, onToggle }) => (
-    <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h6">{title}</Typography>
-        <IconButton onClick={onToggle} size="small">
-            {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        </IconButton>
-    </Box>
-);
+const BudgetOverview = ({ budget, onSetupClick }) => {
+  console.log('Raw budget object:', budget);
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-const BudgetOverview = () => {
-    const { budget, summary, loading, error } = useSelector(
-        (state) => ({
-            budget: state.budget.budget,
-            summary: state.budget.summary,
-            loading: state.budget.loading,
-            error: state.budget.error
-        }),
-        (prev, next) => {
-            return prev.loading === next.loading &&
-                prev.error === next.error &&
-                prev.budget?.id === next.budget?.id &&
-                prev.budget?.totalAmount === next.budget?.totalAmount &&
-                prev.summary?.totalSpent === next.summary?.totalSpent &&
-                prev.summary?.totalPaid === next.summary?.totalPaid &&
-                prev.summary?.totalPending === next.summary?.totalPending;
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      if (budget?.id) {
+        try {
+          console.log('Budget object:', {
+            id: budget.id,
+            weddingId: budget.wedding?.id,
+            totalAmount: budget.totalAmount,
+            categoryAllocations: budget.categoryAllocations
+          });
+          
+          const response = await budgetService.getExpenses(budget.wedding.id);
+          console.log('Raw API response:', response);
+          
+          if (response?.expenses && response?.summary) {
+            setExpenses(response.expenses);
+            // Store the summary for debugging
+            console.log('Budget summary from API:', response.summary);
+          } else {
+            console.warn('No expenses or summary found in response');
+            setExpenses([]);
+          }
+        } catch (error) {
+          console.error('Error fetching expenses:', error);
         }
-    );
+      }
+      setLoading(false);
+    };
 
-    if (loading) return <Box>Loading...</Box>;
-    if (error) return <Alert severity="error">{error}</Alert>;
-    if (!budget || !summary) return null;
+    fetchExpenses();
+  }, [budget]);
 
+  if (!budget) {
     return (
-        <Box>
-            {/* Stats Overview */}
-            <Grid container spacing={3} mb={4}>
-                <Grid item xs={12} md={3}>
-                    <StatCard
-                        title="Total Budget"
-                        value={budget.totalAmount}
-                    />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                    <StatCard
-                        title="Total Spent"
-                        value={summary.totalSpent}
-                    />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                    <StatCard
-                        title="Total Paid"
-                        value={summary.totalPaid}
-                    />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                    <StatCard
-                        title="Pending Payments"
-                        value={summary.totalPending}
-                    />
-                </Grid>
-            </Grid>
-
-            {/* Budget Progress */}
-            <Box mb={4}>
-                <Typography variant="h6" gutterBottom>
-                    Budget Utilization
-                </Typography>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                    <Typography variant="body2">Progress</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                        ${summary.totalSpent.toLocaleString()} / ${budget.totalAmount.toLocaleString()}
-                    </Typography>
-                </Box>
-                <LinearProgress
-                    variant="determinate"
-                    value={Math.min((summary.totalSpent / budget.totalAmount) * 100, 100)}
-                    sx={{
-                        height: 8,
-                        borderRadius: 4,
-                        bgcolor: 'rgba(0, 0, 0, 0.08)',
-                        '& .MuiLinearProgress-bar': {
-                            bgcolor: '#2E2957',
-                            borderRadius: 4,
-                        }
-                    }}
-                />
-            </Box>
-
-            {/* Category Breakdown */}
-            <Box>
-                <Typography variant="h6" gutterBottom>
-                    Category Breakdown
-                </Typography>
-                <Grid container spacing={3}>
-                    {Object.entries(summary.spentByCategory || {}).map(([category, spent], index, array) => {
-                        // Calculate dynamic grid size
-                        let mdSize = 12; // Default full width
-                        const totalItems = array.length;
-                        
-                        if (totalItems === 2) {
-                            mdSize = 6; // Two equal columns
-                        } else if (totalItems === 3) {
-                            mdSize = 4; // Three equal columns
-                        } else if (totalItems >= 4) {
-                            const itemsInFirstRow = totalItems % 3 === 0 ? 3 : 
-                                                  totalItems % 2 === 0 ? 2 : 3;
-                            const isInFirstRow = index < itemsInFirstRow;
-                            mdSize = isInFirstRow ? 12 / itemsInFirstRow : 6;
-                        }
-
-                        return (
-                            <Grid item xs={12} md={mdSize} key={category}>
-                                <CategoryProgress
-                                    category={category}
-                                    spent={spent}
-                                    totalBudget={budget.totalAmount}
-                                />
-                            </Grid>
-                        );
-                    })}
-                </Grid>
-            </Box>
-        </Box>
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+          No budget has been set up yet
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={onSetupClick}
+          sx={{
+            bgcolor: '#D1BFA5',
+            '&:hover': { bgcolor: '#C1AF95' },
+          }}
+        >
+          Set Up Budget
+        </Button>
+      </Box>
     );
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="body1" color="text.secondary">
+          Loading budget details...
+        </Typography>
+      </Box>
+    );
+  }
+  
+  const totalBudget = parseFloat(budget.totalAmount) || 0;
+  const totalExpenses = expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
+  const totalPaid = expenses.reduce((sum, expense) => {
+    if (expense.status === 'paid') return sum + (parseFloat(expense.amount) || 0);
+    if (expense.status === 'partial') return sum + (parseFloat(expense.paidAmount) || 0);
+    return sum;
+  }, 0);
+  const totalPending = totalExpenses - totalPaid;
+  const remainingBudget = totalBudget - totalExpenses;
+
+  // Calculate expenses by category
+  const expensesByCategory = expenses.reduce((acc, expense) => {
+    const category = expense.category || 'Uncategorized';
+    const amount = parseFloat(expense.amount) || 0;
+    acc[category] = (acc[category] || 0) + amount;
+    return acc;
+  }, {});
+
+  console.log('Final calculated values:', {
+    totalBudget,
+    totalExpenses,
+    totalPaid,
+    totalPending,
+    remainingBudget,
+    expensesByCategory
+  });
+
+  return (
+    <Box sx={{ mb: 4 }}>
+      <Stack spacing={2}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <StatCard
+            icon={AccountBalance}
+            label="Total Budget"
+            value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalBudget)}
+            color="#4CAF50"
+          />
+          <StatCard
+            icon={Receipt}
+            label="Total Expenses"
+            value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalExpenses)}
+            color="#FF9800"
+          />
+          <StatCard
+            icon={TrendingUp}
+            label="Remaining"
+            value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(remainingBudget)}
+            color="#2196F3"
+          />
+        </Stack>
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <StatCard
+            icon={CheckCircle}
+            label="Total Paid"
+            value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalPaid)}
+            color="#4CAF50"
+          />
+          <StatCard
+            icon={Schedule}
+            label="Total Pending"
+            value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalPending)}
+            color="#FF9800"
+          />
+          <StatCard
+            icon={MonetizationOn}
+            label="Budget Progress"
+            value={`${Math.round((totalExpenses / totalBudget) * 100)}%`}
+            color="#2196F3"
+          />
+        </Stack>
+
+        {Object.keys(expensesByCategory).length > 0 ? (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2,
+              bgcolor: '#FFFFFF',
+              border: '1px solid',
+              borderColor: '#E8E3DD',
+              borderRadius: '16px',
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+              <Category sx={{ color: '#D1BFA5', fontSize: 20 }} />
+              <Typography variant="subtitle1">Expenses by Category</Typography>
+            </Stack>
+            {Object.entries(expensesByCategory).map(([category, amount]) => (
+              <CategoryProgress
+                key={category}
+                category={category}
+                amount={amount}
+                total={totalBudget}
+              />
+            ))}
+          </Paper>
+        ) : (
+          <Typography variant="body2" color="text.secondary" textAlign="center">
+            No expenses added yet
+          </Typography>
+        )}
+      </Stack>
+    </Box>
+  );
 };
 
 export default BudgetOverview; 

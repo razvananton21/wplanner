@@ -19,6 +19,7 @@ class Budget
 
     #[ORM\OneToOne(inversedBy: 'budget')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['budget:read'])]
     private ?Wedding $wedding = null;
 
     #[ORM\Column]

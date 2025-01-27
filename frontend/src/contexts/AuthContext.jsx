@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { login as loginAction, logout as logoutAction } from '../store/slices/authSlice';
 
 const AuthContext = createContext(null);
@@ -14,6 +15,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const reduxUser = useSelector(state => state.auth.user);
     const [user, setUser] = useState(reduxUser);
 
@@ -33,9 +35,14 @@ export const AuthProvider = ({ children }) => {
         }
     }, [dispatch]);
 
-    const logout = useCallback(() => {
-        dispatch(logoutAction());
-    }, [dispatch]);
+    const logout = useCallback(async () => {
+        try {
+            await dispatch(logoutAction()).unwrap();
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    }, [dispatch, navigate]);
 
     const value = {
         user,
