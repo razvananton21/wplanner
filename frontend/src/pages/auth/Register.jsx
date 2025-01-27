@@ -5,16 +5,13 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
-  Container,
-  Box,
   Typography,
-  TextField,
   Button,
-  Paper,
   IconButton,
   InputAdornment,
   Alert,
   Grid,
+  Box,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -23,7 +20,8 @@ import {
   VisibilityOff,
 } from '@mui/icons-material';
 import { register as registerUser, clearError } from '../../store/slices/authSlice';
-import { motion } from 'framer-motion';
+import { commonTextFieldStyles } from '../../components/layout/styles';
+import TextField from '../../components/common/form/TextField';
 
 // Capacitor plugins
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -77,10 +75,7 @@ const Register = () => {
       }
       
       const { confirmPassword, ...registrationData } = data;
-      console.log('Submitting registration data:', registrationData);
-      
       const result = await dispatch(registerUser(registrationData)).unwrap();
-      console.log('Registration successful:', result);
       
       // Show success message and navigate to login
       dispatch(clearError());
@@ -99,139 +94,151 @@ const Register = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+    <>
+      <Typography 
+        component="h1" 
+        variant="h5" 
+        align="center" 
+        gutterBottom
+        sx={{ 
+          color: '#5C5C5C',
+          fontSize: '1.5rem',
+          fontWeight: 600,
+          fontFamily: 'Cormorant Garamond, serif',
+          mb: 3
+        }}
       >
-        <Box
+        Create Account
+      </Typography>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="First Name"
+              autoFocus
+              error={!!errors.firstName}
+              helperText={errors.firstName?.message}
+              sx={commonTextFieldStyles}
+              {...register('firstName')}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Last Name"
+              error={!!errors.lastName}
+              helperText={errors.lastName?.message}
+              sx={commonTextFieldStyles}
+              {...register('lastName')}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label="Email Address"
+              type="email"
+              autoComplete="email"
+              error={!!errors.email}
+              helperText={errors.email?.message}
+              sx={commonTextFieldStyles}
+              {...register('email')}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              sx={commonTextFieldStyles}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => handleTogglePassword('password')}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              {...register('password')}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label="Confirm Password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+              sx={commonTextFieldStyles}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => handleTogglePassword('confirm')}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              {...register('confirmPassword')}
+            />
+          </Grid>
+        </Grid>
+
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
           sx={{
-            mt: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+            mt: 3,
+            mb: 2,
+            bgcolor: '#D1BFA5',
+            color: '#FFFFFF',
+            height: 44,
+            borderRadius: '8px',
+            textTransform: 'none',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '0.9375rem',
+            fontWeight: 500,
+            '&:hover': {
+              bgcolor: '#7A6B63',
+            },
           }}
+          disabled={loading}
         >
-          <Paper
-            elevation={3}
+          {loading ? 'Creating Account...' : 'Sign Up'}
+        </Button>
+
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Button
+            color="primary"
+            onClick={() => navigate('/login')}
             sx={{
-              p: 4,
-              width: '100%',
-              borderRadius: 2,
+              textTransform: 'none',
+              color: '#7A6B63',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '0.875rem',
+              '&:hover': {
+                bgcolor: 'transparent',
+                color: '#D1BFA5',
+              },
             }}
           >
-            <Typography component="h1" variant="h5" align="center" gutterBottom>
-              Create Account
-            </Typography>
-
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => dispatch(clearError())}>
-                {error}
-              </Alert>
-            )}
-
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="First Name"
-                    autoFocus
-                    {...register('firstName')}
-                    error={!!errors.firstName}
-                    helperText={errors.firstName?.message}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Last Name"
-                    {...register('lastName')}
-                    error={!!errors.lastName}
-                    helperText={errors.lastName?.message}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Email Address"
-                    autoComplete="email"
-                    {...register('email')}
-                    error={!!errors.email}
-                    helperText={errors.email?.message}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password')}
-                    error={!!errors.password}
-                    helperText={errors.password?.message}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => handleTogglePassword('password')}
-                            edge="end"
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Confirm Password"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    {...register('confirmPassword')}
-                    error={!!errors.confirmPassword}
-                    helperText={errors.confirmPassword?.message}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => handleTogglePassword('confirm')}
-                            edge="end"
-                          >
-                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-              </Grid>
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
-                disabled={loading}
-              >
-                {loading ? 'Creating Account...' : 'Sign Up'}
-              </Button>
-
-              <Box sx={{ mt: 2, textAlign: 'center' }}>
-                <Button
-                  color="primary"
-                  onClick={() => navigate('/login')}
-                  sx={{ textTransform: 'none' }}
-                >
-                  Already have an account? Sign In
-                </Button>
-              </Box>
-            </form>
-          </Paper>
+            Already have an account? Sign In
+          </Button>
         </Box>
-      </motion.div>
-    </Container>
+      </form>
+    </>
   );
 };
 

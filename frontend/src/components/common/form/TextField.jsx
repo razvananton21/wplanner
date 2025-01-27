@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Box, Typography, TextField as MuiTextField } from '@mui/material';
 
-const TextField = ({ label, value, onChange, required = false, type = 'text', ...props }) => {
+const TextField = forwardRef(({ label, value, onChange, required = false, type = 'text', error, helperText, InputProps, ...props }, ref) => {
     return (
         <Box sx={{ mb: 2 }}>
             <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
@@ -14,6 +14,10 @@ const TextField = ({ label, value, onChange, required = false, type = 'text', ..
                 type={type}
                 variant="outlined"
                 InputLabelProps={{ shrink: true }}
+                error={error}
+                helperText={helperText}
+                InputProps={InputProps}
+                inputRef={ref}
                 sx={{
                     '& .MuiOutlinedInput-root': {
                         backgroundColor: '#FAFAFA',
@@ -30,6 +34,8 @@ const TextField = ({ label, value, onChange, required = false, type = 'text', ..
             />
         </Box>
     );
-};
+});
+
+TextField.displayName = 'TextField';
 
 export default TextField; 

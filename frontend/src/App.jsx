@@ -20,10 +20,12 @@ import InvitationPage from './components/invitation/InvitationPage';
 import BudgetPage from './components/budget/BudgetPage';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import AuthLayout from './components/layout/AuthLayout';
 
 const App = () => {
   const location = useLocation();
   const isPublicPage = location.pathname.startsWith('/rsvp/');
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   return (
     <ThemeProvider theme={theme}>
@@ -34,18 +36,32 @@ const App = () => {
             minHeight: '100vh',
             bgcolor: 'background.default',
             position: 'relative',
+            ...(isAuthPage && {
+              height: '100vh',
+              overflow: 'hidden',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            })
           }}
         >
-          {!isPublicPage && <Header />}
+          {!isPublicPage && !isAuthPage && <Header />}
           {isPublicPage ? (
             <Routes>
               <Route path="/rsvp/:token" element={<RsvpPage />} />
             </Routes>
-          ) : (
-            <ResponsiveLayout>
+          ) : isAuthPage ? (
+            <AuthLayout>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+              </Routes>
+            </AuthLayout>
+          ) : (
+            <ResponsiveLayout>
+              <Routes>
                 <Route path="/" element={<WeddingList />} />
                 <Route path="/weddings" element={<WeddingList />} />
                 <Route path="/weddings/:id" element={<WeddingDetails />} />
